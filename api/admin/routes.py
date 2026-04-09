@@ -8,7 +8,6 @@ import json
 import re
 from werkzeug.utils import secure_filename
 from PIL import Image
-from weasyprint import HTML
 from io import BytesIO
 from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -2471,6 +2470,8 @@ def download_result(exam_id):
     cpsu_logo = image_to_base64("cpsulogo.png")
     bagong_logo = image_to_base64("bagong-pilipinas-logo.png")
     safe_logo = image_to_base64("logo.png")
+    
+    from weasyprint import HTML
 
     html = render_template(
         "admin/adminSurveyResultPDF.html",
@@ -2911,6 +2912,9 @@ def download_admin_inventory_pdf(student_id):
     other_school = other_school_data[1] if other_school_data else ""
 
     cpsu_logo_base64 = image_to_base64("cpsulogo.png")
+
+    
+    from weasyprint import HTML
 
     html = render_template(
         "admin/adminInventoryResultPDF.html",
