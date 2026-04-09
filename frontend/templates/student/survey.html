@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SURVEY</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/studentHeader.html' %}
+
+<!-- MAIN CONTENT -->
+<div class="flex flex-1 items-center justify-center px-4 sm:px-8 lg:px-16">
+    <main class="w-full max-w-4xl">
+
+        <!-- CARD -->
+        <div class="bg-white p-4 sm:p-6 shadow-md rounded-lg">
+            <h2 class="text-lg sm:text-xl font-bold text-center">
+                WELCOME, {{ info.fullname|upper }}
+            </h2>
+
+            <p class="text-sm sm:text-base pt-2 sm:pt-4 text-justify indent-8">
+                In order to choose a career that will give you personal satisfaction, 
+                you must spend some time thinking about what really interests you. 
+                This activity helps you match your interest to different types of career.
+                For each item, choose the letter of the activity you would rather do.
+                It doesn't matter if you like both or dislike both.
+            </p>
+
+            <p class="font-semibold text-sm sm:text-base mt-3 text-center sm:text-left">
+                JUST PICK THE ONE YOU WOULD RATHER DO, AND CHOOSE THAT LETTER
+            </p>
+
+            <hr class="my-4 border-black">
+
+            <!-- START SECTION -->
+            <div class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 p-4 shadow-md rounded-md">
+                <p class="font-semibold text-center sm:text-left">
+                    TAKE PART IN THIS! <br>
+                    CAREER INTEREST SURVEY <br><br>
+                    <span class="text-sm font-normal">You have 15 mins to answer</span>
+                </p>
+
+                <button onclick="openModal()"
+                    class="bg-[#166D3B] text-white w-20 h-20 flex items-center justify-center rounded-full hover:bg-green-700">
+                    START
+                </button>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- MODAL -->
+<div id="surveyModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden px-4">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+        <h3 class="text-lg font-bold mb-4">Before You Begin</h3>
+
+        <p class="mb-6 text-sm sm:text-base">
+            Make yourself available for 15 minutes to complete the survey.<br>
+            If you do not complete the survey, try again.
+        </p>
+
+        <div class="flex justify-between gap-4">
+            <button onclick="closeModal()"
+                class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 w-full">
+                Cancel
+            </button>
+
+            <button onclick="proceedSurvey()"
+                class="bg-[#166D3B] text-white px-4 py-2 rounded hover:bg-green-700 w-full">
+                Proceed
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal() {
+    document.getElementById("surveyModal").classList.remove("hidden");
+}
+function closeModal() {
+    document.getElementById("surveyModal").classList.add("hidden");
+}
+function proceedSurvey() {
+    window.location.href = "/student/surveyForm";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEADER</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+    <!-- HEADER -->
+<header class="fixed top-0 left-0 right-0 bg-[#166D3B] text-[#f6ebcd] flex justify-between items-center px-8 py-4 rounded-lg h-20">
+    <div class="flex items-center space-x-3">
+        <img src="/static/images/aspire.png" alt="AspireMatch Logo" class="max-h-24 w-auto">
+        <h1 class="text-3xl font-semibold">AspireMatch</h1>
+    </div>
+
+    <div class="flex items-center space-x-3 right-10">
+            <div class="relative group">
+                <div class="bg-[#f6ebcd] text-[#166D3B] p-3 rounded-full flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                    </svg>
+                </div>
+                <a href="{{ url_for('admin.login') }}" 
+                   class="absolute left-1/2 -translate-x-1/2 mt-1 px-2 py-1 text-sm bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition">
+                    Logout
+                </a>
+            </div>
+    </div>
+
+</header>
+
+
+</body>
+</html>

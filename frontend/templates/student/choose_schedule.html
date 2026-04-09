@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/studentHeader.html' %}
+
+{% include 'components/studentSidebar.html' %}
+
+    <!-- MAIN CONTENT -->
+<div class="flex flex-1">
+     <main
+        class="
+            flex-1
+            bg-[#f6ebcd]
+            min-h-screen
+            pt-[110px]
+             lg:px-8
+            w-[100px] ml-0  
+            lg:ml-72
+        "
+    >
+    <div class="bg-white lg:mb-16 rounded-3xl shadow-xl p-2 lg:p-8 w-[410px] lg:w-[900px]">
+      <button onclick="window.history.back();" 
+                            class="p-2 text-xs lg:text-lg bg-[#EEEDED] text-black rounded hover:bg-gray-700 hover:text-white border border-[#166D3B]">
+                        ← Back
+                    </button>
+        <h1 class="text-sm lg:text-3xl font-bold text-center mb-8 text-[#166D3B]">📅 Choose Schedule</h1>
+
+        <div class="flex justify-center items-center mb-6">
+          <select id="yearSelect" class="border rounded-lg px-3 py-1 text-sm focus:ring-[#166D3B] focus:outline-none"></select>
+
+          <div class="flex items-center space-x-3 ml-6">
+          <h2 id="monthDisplay" class="text-sm lg:text-2xl font-bold text-[#166D3B]">October</h2>
+          <button id="prevMonth" class="text-sm lg:text-2xl text-[#166D3B] hover:scale-110 transition">⬅</button>
+          <button id="nextMonth" class="text-sm lg:text-2xl text-[#166D3B] hover:scale-110 transition">➡</button>
+          </div>
+
+        </div>
+
+<div
+  id="calendar"
+  class="
+    grid grid-cols-7
+    gap-1 lg:gap-3
+    text-start
+  "
+></div>
+      </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+      <div
+  class="
+    bg-white
+    p-4 sm:p-6
+    rounded-xl
+    shadow-lg
+    w-[90%] sm:w-96
+    text-center
+  "
+>
+        <h2 class="text-xl font-semibold mb-3">Choose this schedule?</h2>
+        <p id="modalDate" class="text-gray-700 mb-1"></p>
+        <p id="modalTime" class="text-gray-700 mb-1"></p>
+        <p id="modalSlots" class="text-gray-700 mb-4"></p>
+        <div class="flex justify-center space-x-4">
+          <button id="cancelBtn" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+          <button id="confirmBtn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="statusModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-xl shadow-lg w-80 text-center">
+        <p id="statusMessage" class="text-lg font-semibold text-gray-700">Saving...</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+ <script>
+    const calendar = document.getElementById("calendar");
+    const monthDisplay = document.getElementById("monthDisplay");
+    const yearSelect = document.getElementById("yearSelect");
+    const prevMonthBtn = document.getElementById("prevMonth");
+    const nextMonthBtn = document.getElementById("nextMonth");
+
+    const modal = document.getElementById("modal");
+    const modalDate = document.getElementById("modalDate");
+    const modalTime = document.getElementById("modalTime");
+    const modalSlots = document.getElementById("modalSlots");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const statusModal = document.getElementById("statusModal");
+    const statusMessage = document.getElementById("statusMessage");
+
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    let currentDate = new Date();
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+    let availableSchedules = [];
+    let selectedSchedule = null;
+
+    async function loadAvailableSchedules() {
+      const res = await fetch("/student/get_schedules");
+      availableSchedules = await res.json();
+      renderCalendar();
+    }
+
+    for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+      const option = document.createElement("option");
+      option.value = y;
+      option.textContent = y;
+      if (y === currentYear) option.selected = true;
+      yearSelect.appendChild(option);
+    }
+
+    yearSelect.addEventListener("change", () => {
+      currentYear = parseInt(yearSelect.value);
+      renderCalendar();
+    });
+
+    prevMonthBtn.addEventListener("click", () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      yearSelect.value = currentYear;
+      renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener("click", () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      yearSelect.value = currentYear;
+      renderCalendar();
+    });
+
+    function to12Hour(timeStr) {
+      const [h, m] = timeStr.split(":");
+      const hour = parseInt(h);
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const formattedHour = ((hour + 11) % 12 + 1);
+      return `${formattedHour}:${m} ${ampm}`;
+    }
+
+    function renderCalendar() {
+      monthDisplay.textContent = months[currentMonth];
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      calendar.innerHTML = "";
+
+      const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      weekDays.forEach(day => {
+        const div = document.createElement("div");
+        div.textContent = day;
+        div.className = "font-semibold text-[9px] lg:text-lg text-gray-600 py-2";
+        calendar.appendChild(div);
+      });
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        calendar.appendChild(empty);
+      }
+
+      for (let d = 1; d <= lastDate; d++) {
+        const dayDiv = document.createElement("div");
+        dayDiv.className = `
+  p-0 lg:p-3
+  min-h-[30px] lg:min-h-[50px]
+  w-10 lg:w-fit
+  rounded-lg
+  text-[10px] lg:text-sm
+  text-gray-700
+  border border-gray-200
+  cursor-pointer
+  transition items-center justify-start
+`;
+
+        const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const available = availableSchedules.find(s => s.date === dateString);
+
+        const dayNum = document.createElement("div");
+        dayNum.textContent = d;
+        dayNum.className = "font-bold text-[7px] lg:text-lg";
+
+        dayDiv.appendChild(dayNum);
+
+        if (available) {
+          dayDiv.classList.add("bg-green-100", "hover:bg-green-500", "hover:text-white");
+
+          const timeInfo = document.createElement("div");
+          timeInfo.className = "text-[9px] sm:text-[11px] lg:text-xs mt-1 leading-tight";
+          timeInfo.innerHTML = `
+            Time: ${to12Hour(available.start_time)} - ${to12Hour(available.end_time)}<br>
+            Slots available: ${available.slots}
+          `;
+          dayDiv.appendChild(timeInfo);
+
+          dayDiv.title = `Available: ${to12Hour(available.start_time)} - ${to12Hour(available.end_time)}`;
+        } else {
+          dayDiv.classList.add("hover:bg-gray-200");
+        }
+
+        const today = new Date();
+        if (d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+          dayDiv.classList.add("ring-2", "ring-[#166D3B]");
+        }
+
+        dayDiv.addEventListener("click", () => {
+          if (!available) return;
+          selectedSchedule = available;
+          openModal(available);
+        });
+
+        calendar.appendChild(dayDiv);
+      }
+    }
+
+    function openModal(schedule) {
+      const fullDate = new Date(schedule.date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+      modalDate.textContent = fullDate;
+      modalTime.textContent = `Time: ${to12Hour(schedule.start_time)} - ${to12Hour(schedule.end_time)}`;
+      modalSlots.textContent = `Slots available: ${schedule.slots}`;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeModal() {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    cancelBtn.addEventListener("click", closeModal);
+
+    confirmBtn.addEventListener("click", async () => {
+      if (!selectedSchedule) return;
+
+      closeModal();
+      showStatusModal("Saving...");
+
+      try {
+        const res = await fetch("/student/save_student_schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule_id: selectedSchedule.id })
+        });
+        const data = await res.json();
+
+        setTimeout(() => {
+          if (data.success) {
+            showStatusModal("✅ Schedule saved successfully!");
+            setTimeout(() => {
+              closeStatusModal();
+              loadAvailableSchedules();
+              window.location.href = "/student/home";
+            }, 2000);
+          } else {
+            showStatusModal("❌ " + data.message);
+            setTimeout(closeStatusModal, 2000);
+          }
+        }, 2000);
+      } catch (err) {
+        showStatusModal("❌ Error saving schedule.");
+        setTimeout(closeStatusModal, 2000);
+      }
+    });
+
+    function showStatusModal(message) {
+      statusMessage.textContent = message;
+      statusModal.classList.remove("hidden");
+    }
+
+    function closeStatusModal() {
+      statusModal.classList.add("hidden");
+    }
+
+    loadAvailableSchedules();
+  </script>
+
+      {% include 'components/footer.html' %}
+
+</body>
+</html>

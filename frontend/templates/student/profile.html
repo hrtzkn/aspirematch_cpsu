@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROFILE</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/studentHeader.html' %}
+
+{% include 'components/studentSidebar.html' %}
+
+    <!-- MAIN CONTENT -->
+<div class="flex flex-1">
+    <main
+        class="flex-1 bg-[#f6ebcd] min-h-screen
+               pt-[90px] lg:pt-[90px]
+               px-4 sm:px-6 lg:px-8
+               ml-5 lg:ml-96 text-[10px] lg:text-[14px]">
+
+        <div class="w-fit lg:w-[700px] bg-white p-6 lg:p-8 
+            rounded-2xl shadow-lg border border-[#166D3B]">
+            <h2 class="text-sm lg:text-xl font-bold mb-6">Profile Information</h2>
+
+            <div class="flex justify-center mb-6 print:hidden">
+                {% if student.photo %}
+                    <div class="text-center">
+                        <img src="{{ url_for('static', filename='uploads/students/' ~ student.photo) }}"
+                            class="w-20 lg:w-32 h-20 lg:h-32 rounded-full object-cover border border-black mx-auto mb-2">
+
+                        <form action="{{ url_for('student.upload_student_photo') }}"
+                            method="POST"
+                            enctype="multipart/form-data"
+                            class="space-y-1">
+
+                            <input type="file"
+                                name="photo"
+                                accept="image/*"
+                                class="text-xs lg:text-xs w-48 lg:w-fit border border-black p-1"
+                                required>
+
+                            <button type="submit"
+                                    class="bg-[#166D3B] text-white text-xs lg:text-sm px-3 py-1 rounded">
+                                Change Photo
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <img src="{{ url_for('static', filename='images/1x1.jpg') }}"
+                            class="w-20 lg:w-32 h-20 lg:h-32 rounded-full object-cover opacity-60 border border-black mx-auto mb-2">
+
+                        <form action="{{ url_for('student.upload_student_photo') }}"
+                            method="POST"
+                            enctype="multipart/form-data"
+                            class="space-y-1">
+
+                            <input type="file"
+                                name="photo"
+                                accept="image/*"
+                                class="text-xs lg:text-sm w-48 lg:w-fit border border-black p-1"
+                                required>
+
+                            <button type="submit"
+                                    class="bg-[#166D3B] text-white text-xs lg:text-sm px-3 py-1 rounded">
+                                Upload Photo
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="profileView" class="text-[10px] lg:text-sm">
+                <div>
+                    <label class="block mb-1">Fullname</label>
+                    <div class="w-full p-2 border border-[#166D3B] rounded-md">
+                        {{ student.fullname }}
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-1">Gender</label>
+                    <div class="w-full p-2 border border-[#166D3B] rounded-md">
+                        {{ student.gender }}
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-1">Email Address</label>
+                    <div class="w-full p-2 mb-2 border border-[#166D3B] rounded-md">
+                        {{ student.email }}
+                    </div>
+                </div>
+
+                <button
+                    id="editBtn"
+                    type="button"
+                    class="bg-[#166D3B] text-white py-2 px-6 rounded-lg hover:bg-green-800">
+                    Edit
+                </button>
+            </div>
+
+            <div id="profileEdit" class="hidden text-[10px] lg:text-sm">
+
+                <form action="/student/profile" method="POST">
+                        <div>
+                            <label class="block mb-1">Fullname</label>
+                            <input type="text"
+                                name="fullname"
+                                value="{{ student.fullname }}"
+                                required
+                                oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')"
+                                class="w-full p-2 border border-[#166D3B] rounded-md">
+                        </div>
+
+                        <div>
+                            <label class="block mb-1">Gender</label>
+                            <input type="text"
+                                name="gender"
+                                value="{{ student.gender }}"
+                                required
+                                class="w-full p-2 border border-[#166D3B] rounded-md">
+                        </div>
+
+                        <label class="block mb-1">Email Address</label>
+                        <input type="email"
+                            name="email"
+                            value="{{ student.email }}"
+                            required
+                            class="w-full p-2 mb-2 border border-[#166D3B] rounded-md">
+
+                    <div class="flex gap-2">
+                        <button type="submit"
+                                class="bg-[#166D3B] text-white py-2 px-6 rounded-lg hover:bg-green-800">
+                            Save Changes
+                        </button>
+
+                        <button type="button"
+                                id="cancelBtn"
+                                class="border border-[#166D3B] py-2 px-6 rounded-lg">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+{% include 'components/footer.html' %}
+
+<script>
+    const viewDiv = document.getElementById("profileView");
+    const editDiv = document.getElementById("profileEdit");
+    const editBtn = document.getElementById("editBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+
+    editBtn.addEventListener("click", () => {
+        viewDiv.classList.add("hidden");
+        editDiv.classList.remove("hidden");
+    });
+
+    cancelBtn.addEventListener("click", () => {
+        editDiv.classList.add("hidden");
+        viewDiv.classList.remove("hidden");
+    });
+</script>
+
+</body>
+</html>

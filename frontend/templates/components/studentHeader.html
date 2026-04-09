@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        #typingIndicator {
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+<!-- HEADER -->
+<header
+    class="fixed top-0 left-0 right-0 z-50
+           bg-[#166D3B] text-[#f6ebcd]
+           flex justify-between items-center
+           px-4 lg:px-8
+           h-16">
+
+    <!-- LOGO + TITLE -->
+    <div class="flex items-center space-x-2 sm:space-x-3">
+        <img src="/static/images/aspire.png"
+             alt="AspireMatch Logo"
+             class="h-10 lg:h-20 w-auto">
+
+        <h1 class="text-lg lg:text-2xl font-semibold">
+            AspireMatch
+        </h1>
+    </div>
+
+    <!-- RIGHT ACTIONS -->
+    <div class="flex items-center space-x-2 sm:space-x-3">
+
+        <!-- CHAT -->
+<div class="relative z-50">
+    <div id="chat-button" class="cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-14">
+            <path fill-rule="evenodd" d="M4.804 21.644A6.707 6.707 0 0 0 6 21.75a6.721 6.721 0 0 0 3.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 0 1-.814 1.686.75.75 0 0 0 .44 1.223ZM8.25 10.875a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25ZM10.875 12a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875-1.125a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Z" clip-rule="evenodd" />
+        </svg>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div id="chat-panel" class="hidden fixed
+        text-start bottom-4 right-2 top-48 md:top-20 md:right-6
+        w-80 md:w-96 h-[60vh] md:h-[70vh]
+        bg-white rounded-t-xl md:rounded-xl
+        shadow-xl p-3 md:p-4 flex flex-col z-50">
+
+        <div class="text-black mb-2">
+            <span class="font-semibold text-sm">Chat with Aspire</span>
+        </div>
+
+        <!-- MESSAGES -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto pb-2"></div>
+
+        <!-- TYPING -->
+        <div id="typingIndicator" class="hidden p-1 text-xs text-gray-600 italic">
+            Aspire is typing...
+        </div>
+
+        <!-- INPUT -->
+        <div class="mt-2 flex gap-2">
+            <input id="chat-input" class="flex-grow text-[#166D3B]
+                p-2 border border-black rounded text-sm" placeholder="Ask Aspire...">
+            <button id="chat-send" class="bg-[#166D3B] text-white px-4 rounded text-sm">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- LOGOUT BUTTON -->
+<div class="relative">
+    <button id="logoutBtn"
+        class="bg-[#f6ebcd] text-[#166D3B]
+               p-2 sm:p-3
+               rounded-full
+               flex items-center justify-center">
+        <img src="/static/images/logout.png" alt="Logout Logo" class="max-h-6 w-auto">
+    </button>
+</div>
+
+<!-- LOGOUT POPUP (TOP RIGHT like admin) -->
+<div id="logoutPopup"
+     class="hidden fixed top-16 lg:top-2 right-4 lg:right-24 bg-white shadow-xl rounded-lg p-2 w-60 z-50 border">
+
+    <p class="text-sm font-semibold text-gray-800 mb-2">
+        Are you sure you want to logout?
+    </p>
+
+    <div class="flex justify-between gap-2">
+        <!-- Cancel -->
+        <button id="cancelLogout"
+                class="px-3 py-1 text-sm text-black bg-gray-300 rounded hover:bg-gray-400">
+            Cancel
+        </button>
+
+        <!-- Yes -->
+        <a href="{{ url_for('student.logout') }}"
+           class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+            Yes
+        </a>
+    </div>
+</div>
+
+    </div>
+</header>
+
+<div id="student-data" data-student-id="{{ session['student_id'] }}"></div>
+<script>
+const STUDENT_ID = document
+  .getElementById("student-data")
+  .dataset.studentId;
+</script>
+
+<script>
+const logoutBtn = document.getElementById("logoutBtn");
+const logoutPopup = document.getElementById("logoutPopup");
+const cancelLogout = document.getElementById("cancelLogout");
+const chatButton = document.getElementById("chat-button");
+const chatPanel = document.getElementById("chat-panel");
+const chatSend = document.getElementById("chat-send");
+const chatInput = document.getElementById("chat-input");
+const messagesDiv = document.getElementById("chat-messages");
+const typingIndicator = document.getElementById("typingIndicator");
+
+function scrollToBottom() {
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+document.addEventListener("click", (e) => {
+    if (!chatPanel.contains(e.target) && !chatButton.contains(e.target)) {
+        chatPanel.classList.add("hidden");
+    }
+});
+
+chatButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    const isOpening = chatPanel.classList.contains("hidden");
+
+    if (isOpening) {
+        chatPanel.classList.remove("hidden");
+        setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+    } else {
+        chatPanel.classList.add("hidden");
+        return;
+    }
+
+    // FIRST TIME MESSAGE
+    const welcomeKey = "AspireWelcomeShown_" + STUDENT_ID;
+    const hasSeenWelcome = localStorage.getItem(welcomeKey);
+
+    if (!hasSeenWelcome) {
+        showTyping();
+
+        setTimeout(() => {
+            hideTyping();
+
+            messagesDiv.innerHTML += `
+                <div class="p-2 bg-[#166D3B] text-white rounded mb-2">
+                    Hello! I'm Aspire, your AspireMatch virtual assistant.
+                </div>
+            `;
+
+            setTimeout(() => {
+                scrollToBottom();
+            }, 50);
+
+            localStorage.setItem(welcomeKey, "true");
+            saveChatHistory();
+
+        }, 800);
+    }
+});
+
+chatPanel.addEventListener("click", (e) => e.stopPropagation());
+
+// Send predefined quick button messages
+function sendPredefined(msg) {
+    chatInput.value = msg;
+    sendMessage();
+}
+
+// Send message function
+async function sendMessage() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+
+    // Append user message
+    messagesDiv.innerHTML += `
+        <div class="flex justify-end mb-2">
+            <div class="bg-gray-200 text-[#166D3B] px-3 py-2 rounded-lg max-w-[75%]">
+                ${msg}
+            </div>
+        </div>
+    `;
+
+    saveChatHistory();
+    
+    chatInput.value = "";
+    scrollToBottom();
+    showTyping();
+
+    // Fetch AI reply
+    const res = await fetch("/student/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, student_id: STUDENT_ID }) // STUDENT_ID from session
+    });
+
+    const data = await res.json();
+    hideTyping();
+
+    messagesDiv.innerHTML += `
+        <div class="flex justify-start mb-2">
+            <div class="bg-[#166D3B] text-white px-3 py-2 rounded-lg max-w-[75%] whitespace-pre-line">
+                ${data.reply}
+            </div>
+        </div>
+    `;
+    scrollToBottom();
+
+    saveChatHistory();
+}
+
+// Enter key support
+chatSend.addEventListener("click", sendMessage);
+chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// Typing indicator
+function showTyping() { typingIndicator.classList.remove("hidden"); }
+function hideTyping() { typingIndicator.classList.add("hidden"); }
+
+// Save chat to localStorage
+function saveChatHistory() {
+    localStorage.setItem("AspireChatHistory_" + STUDENT_ID, messagesDiv.innerHTML);
+}
+
+window.addEventListener("load", () => {
+    const saved = localStorage.getItem("AspireChatHistory_" + STUDENT_ID);
+
+    if (saved) {
+        messagesDiv.innerHTML = saved;
+
+    }
+});
+
+// Show popup
+logoutBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    logoutPopup.classList.remove("hidden");
+});
+
+// Hide popup (Cancel)
+cancelLogout.addEventListener("click", () => {
+    logoutPopup.classList.add("hidden");
+});
+
+// Hide when clicking outside
+document.addEventListener("click", (e) => {
+    if (!logoutPopup.contains(e.target) && !logoutBtn.contains(e.target)) {
+        logoutPopup.classList.add("hidden");
+    }
+});
+</script>
+
+<!--
+//function saveChatHistory() {
+ //   const chatMessages = document.getElementById("chat-messages").innerHTML;
+ //   localStorage.setItem("AspireChatHistory", chatMessages);
+//}
+
+//window.addEventListener("load", () => {
+//    const saved = localStorage.getItem("AspireChatHistory");
+//    if (saved) {
+//        document.getElementById("chat-messages").innerHTML = saved;
+//    }
+//});
+-->
+
+<script src="{{ url_for('static', filename='js/student_auto_logout.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STUDENT LOGIN</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="flex flex-col min-h-screen 
+            bg-[#f6ebcd]
+            lg:bg-none lg:bg-[#f6ebcd]">
+<header class="fixed top-0 left-0 right-0 text-[#f6ebcd]
+               flex flex-col lg:flex-row
+               items-center lg:justify-between
+               px-4 lg:px-8 py-4 lg:h-20
+               z-50 text-center lg:text-left
+                lg:bg-[#166D3B]">
+
+    <!-- Logo + Title -->
+    <div class="flex flex-col lg:flex-row items-center lg:space-x-3 text-[#166D3B] lg:text-[#f6ebcd]">
+        <img src="/static/images/aspire.png"
+             alt="AspireMatch Logo"
+             class="h-14 lg:h-16 w-auto mb-2 lg:mb-0">
+
+        <h1 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold tracking-wide">
+            ASPIREMATCH
+            <span class="block md:inline lg:text-2xl font-semibold text-sm">
+                A Career Interest Recommendation Application
+            </span>
+        </h1>
+    </div>
+
+    <!-- Chat Button -->
+    <div class="mt-3 md:mt-0">
+        <div id="chat-button"
+             class="cursor-pointer lg:text-[#f6ebcd] text-[#166D3B]">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10 lg:size-12">
+            <path fill-rule="evenodd" d="M4.804 21.644A6.707 6.707 0 0 0 6 21.75a6.721 6.721 0 0 0 3.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 0 1-.814 1.686.75.75 0 0 0 .44 1.223ZM8.25 10.875a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25ZM10.875 12a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875-1.125a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Z" clip-rule="evenodd" />
+            </svg>
+        </div>
+
+        <div id="chat-panel"
+            class="hidden fixed
+                    text-start
+                    bottom-4 right-2
+                    top-48 md:top-24 md:right-6
+                    w-80 md:w-96
+                    h-[60vh] md:h-[80vh]
+                    bg-white rounded-t-xl md:rounded-xl
+                    shadow-xl p-3 md:p-4
+                    flex flex-col z-50">
+
+            <div id="chat-messages" class="flex-1 overflow-y-auto pb-2"></div>
+
+            <div id="typingIndicator"
+                class="hidden p-1 text-xs text-gray-600 italic">
+                Aspire is typing...
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="flex-grow flex justify-center items-center
+             pt-0 md:pt-14
+             px-4">
+    <div
+        class="bg-white p-6 sm:p-10 md:p-14 lg:p-10
+               rounded-lg shadow-lg
+               w-full sm:w-[90%] md:w-[70%] lg:w-1/2
+               flex flex-col items-center">
+
+        <img src="{{ url_for('static', filename='images/logo.png') }}"
+             alt="Logo"
+             class="h-20 md:h-24 mb-4">
+
+        <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-center text-black mb-6">
+            Log In to access your Account
+        </h2>
+
+        <form class="w-full" method="POST" action="{{ url_for('student.studentlogin') }}">
+
+            {% if error %}
+            <div id="loginError"
+                class="mb-4 text-center transition-opacity duration-500">
+                <p class="text-red-600 font-semibold">
+                    {{ error }}
+                </p>
+            </div>
+            {% endif %}
+
+            <div class="mb-4">
+                <label class="block text-[#166D3B] text-sm md:text-base">
+                    Examination ID
+                </label>
+                <input type="text" name="exam_id"
+                    value="{{ exam_id if exam_id }}"
+                    class="w-full p-2 rounded-md border
+                            {{ 'border-red-600' if exam_error else 'border-black' }}"
+                    required>
+
+                <label class="block text-[#166D3B] mt-3 text-sm md:text-base">
+                    Email
+                </label>
+                <input type="email" name="email"
+                    value="{{ email if email }}"
+                    class="w-full p-2 rounded-md border
+                            {{ 'border-red-600' if email_error else 'border-black' }}"
+                    required>
+            </div>
+
+            <button type="submit"
+                class="bg-[#166D3B] text-white w-full p-2 rounded-md mt-6
+                       tracking-widest text-sm md:text-base">
+                Login
+            </button>
+        </form>
+    </div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  {% for category, message in messages %}
+    {% if category == "session_expired" %}
+
+    <div id="sessionExpiredModal"
+         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[999]">
+
+        <div class="bg-white p-6 rounded-xl shadow-xl text-center w-80">
+
+            <h2 class="text-lg font-bold text-red-600 mb-2">
+                Session Expired
+            </h2>
+            <p class="text-gray-600 text-sm">
+                Due to inactivity. Please log in again.
+            </p>
+        </div>
+
+    </div>
+{% endif %}
+  {% endfor %}
+{% endif %}
+{% endwith %}
+
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let chatInitialized = false;
+
+document.getElementById("chat-button").onclick = () => {
+    const panel = $("chat-panel");
+
+    // Toggle panel
+    panel.classList.toggle("hidden");
+
+    // If opening for first time → show welcome messages
+    if (!panel.classList.contains("hidden") && !chatInitialized) {
+        chatInitialized = true;
+
+        showTyping();
+        setTimeout(() => {
+            hideTyping();
+            addMessage("Aspire", "Hello! I'm <b>Aspire</b>, your AspireMatch virtual assistant. 😊");
+        }, 500);
+
+        setTimeout(() => {
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                addMessage("Aspire", "AspireMatch is a <b>Career Interest Recommendation System</b> designed to help students discover recommended programs based on their strengths and preferences.");
+            }, 700);
+        }, 1800);
+
+        setTimeout(() => {
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                addMessage("Aspire",
+                    `Click below to see a quick step-by-step.
+                    <button data-chat-action="true"
+                            onclick="startGuide()"
+                            class="px-2 py-1 rounded border">
+                    Start Guide
+                    </button>`
+                );
+            }, 500);
+        }, 3200);
+    }
+};
+
+function addMessage(sender, textHtml) {
+    let messagesDiv = $("chat-messages");
+
+    if (sender === "Aspire") {
+        messagesDiv.innerHTML += `
+            <div class='p-2 md:p-3 bg-[#166D3B] text-white rounded-lg mb-2 text-sm md:text-base max-w-[90%]'>
+                Aspire: ${textHtml}
+            </div>
+        `;
+    } else {
+        messagesDiv.innerHTML += `
+            <div class='p-2 md:p-3 bg-gray-200 rounded-lg text-[#166D3B] mb-2 text-sm md:text-base max-w-[90%] self-end'>
+                You: ${textHtml}
+            </div>
+        `;
+    }
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function showTyping() {
+    $("typingIndicator").classList.remove("hidden");
+}
+function hideTyping() {
+    $("typingIndicator").classList.add("hidden");
+}
+
+function openChat() {
+    $("chat-panel").classList.remove("hidden");
+}
+
+function closeChat(clearMessages = false) {
+    $("chat-panel").classList.add("hidden");
+
+    if (clearMessages) {
+        $("chat-messages").innerHTML = "";
+        hideTyping();
+    }
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+const GUIDE_STEPS = [
+    {
+        title: "Welcome to AspireMatch",
+        body: `
+            <p>This walkthrough will show you how AspireMatch works.</p>
+            <ul class="list-disc ml-4">
+                <li>Discover recommended college programs</li>
+                <li>Use your exam ID to view personalized results</li>
+            </ul>
+        `
+    },
+    {
+        title: "Step 1 — Logging In",
+        body: `
+            <p>To access your results:</p>
+            <ol class="list-decimal ml-4">
+                <li>Enter your <b>Examination ID</b> (provided by your school).</li>
+                <li>Enter the <b>Email</b> you registered with.</li>
+                <li>Click <b>Login</b>.</li>
+            </ol>
+        `
+    },
+    {
+        title: "Step 2 — Taking / Viewing the Assessment",
+        body: `
+            <p>After logging in:</p>
+            <ul class="list-disc ml-4">
+                <li>Take the career interest assessment (if not completed).</li>
+                <li>If you've completed it, view your recommended programs and AI explanation.</li>
+            </ul>
+        `
+    },
+    {
+        title: "Step 3 — Understanding Your Results",
+        body: `
+            <p>Your results include:</p>
+            <ul class="list-disc ml-4">
+                <li><b>Top recommended programs</b> based on your responses.</li>
+                <li>Short explanations about why each program suits you.</li>
+            </ul>
+        `
+    },
+    {
+        title: "Step 4 — Using the Chat Assistant (Aspire)",
+        body: `
+            <p>Aspire can help you:</p>
+            <ul class="list-disc ml-4">
+                <li>Explain your result details.</li>
+                <li>Guide you through the interface.</li>
+                <li>Answer common questions about programs and next steps.</li>
+            </ul>
+            <p>Try typing <i>“explain my top program”</i> or <i>“Can I retake the survey?”</i></p>
+        `
+    },
+    {
+        title: "Step 5 — Support & Next Steps",
+        body: `
+            <p>If you need human support:</p>
+            <ul class="list-disc ml-4">
+                <li>Contact your school's admin or the AspireMatch support team.</li>
+                <li>Save or download your results for future reference.</li>
+            </ul>
+            <p>That's it — good luck exploring your interests! 🎓</p>
+        `
+    }
+];
+
+let currentGuideIndex = 0;
+
+function showGuideStep(index) {
+    if (index < 0) index = 0;
+    if (index >= GUIDE_STEPS.length) index = GUIDE_STEPS.length - 1;
+    currentGuideIndex = index;
+
+    const step = GUIDE_STEPS[index];
+
+    const backDisabled = index === 0 ? "opacity-50 cursor-not-allowed" : "";
+    const nextText = index === GUIDE_STEPS.length - 1 ? "Finish" : "Next";
+
+    const html = `
+        <div style="font-weight:600; margin-bottom:4px;">${escapeHtml(step.title)}</div>
+        <div style="font-size:13px; margin-bottom:8px;">${step.body}</div>
+
+        <div style="display:flex; gap:8px; margin-top:6px;">
+            <button data-chat-action="true" onclick="window.guideBack()" class="px-3 py-1 rounded border ${backDisabled}">
+            Back
+            </button>
+
+            <button data-chat-action="true" onclick="window.guideNext()" class="px-3 py-1 rounded border bg-[#166D3B] text-white">
+            ${nextText}
+            </button>
+
+            <button data-chat-action="true" onclick="window.endGuide()" class="px-3 py-1 rounded border">
+            Close
+            </button>
+        </div>
+    `;
+
+    const messagesDiv = $("chat-messages");
+
+    const existing = messagesDiv.querySelector(".aspire-guide-placeholder");
+    if (existing) existing.remove();
+
+    messagesDiv.innerHTML += `
+        <div class="aspire-guide-placeholder p-2 bg-[#166D3B] text-white rounded mb-2">
+            Aspire: ${html}
+        </div>
+    `;
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+window.guideNext = () => {
+    if (currentGuideIndex < GUIDE_STEPS.length - 1) {
+        showGuideStep(currentGuideIndex + 1);
+    } else {
+        endGuide();
+    }
+};
+window.guideBack = () => {
+    if (currentGuideIndex > 0) showGuideStep(currentGuideIndex - 1);
+};
+
+function startGuide(autostart = false) {
+    openChat();
+
+    const messagesDiv = $("chat-messages");
+    const existing = messagesDiv.querySelector(".aspire-guide-placeholder");
+    if (existing) existing.remove();
+
+    showTyping();
+    setTimeout(() => {
+        hideTyping();
+        showGuideStep(0);
+
+        if (!autostart) {
+            addMessage("Aspire", "I've started a quick step-by-step guide — use Next / Back to navigate.");
+        }
+    }, 800);
+}
+
+window.endGuide = () => {
+    const messagesDiv = $("chat-messages");
+    const existing = messagesDiv.querySelector(".aspire-guide-placeholder");
+    if (existing) existing.remove();
+
+    addMessage("Aspire", "Guide closed. If you want to run it again click 'Start Guide'.");
+};
+
+document.addEventListener("click", function (event) {
+    const chatPanel = document.getElementById("chat-panel");
+    const chatButton = document.getElementById("chat-button");
+
+    if (chatPanel.classList.contains("hidden")) return;
+
+    if (
+        chatPanel.contains(event.target) ||
+        chatButton.contains(event.target) ||
+        event.target.closest("[data-chat-action]")
+    ) {
+        return;
+    }
+
+    closeChat(false);
+});
+
+    setTimeout(() => {
+        const errorBox = document.getElementById("loginError");
+        if (errorBox) {
+            errorBox.style.opacity = "0";
+            setTimeout(() => errorBox.remove(), 500);
+        }
+    }, 10000);
+
+setTimeout(function() {
+    const modal = document.getElementById("sessionExpiredModal");
+    if(modal){
+        modal.style.opacity = "0";
+        setTimeout(()=> modal.remove(), 300);
+    }
+}, 3000);
+</script>
+
+
+</body>
+</html>

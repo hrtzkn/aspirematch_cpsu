@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISUALIZATION</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+canvas {
+    pointer-events: none;
+}
+</style>
+</head>
+
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+<!-- MAIN -->
+<div class="flex flex-1">
+<main class="ml-60 mr-2 p-4 flex-1 mt-20 mb-20 bg-white shadow-md rounded-md border border-[#166D3B]">
+
+<!-- FILTER HEADER ROW -->
+<div class="bg-white flex justify-between items-center gap-2">
+
+    <!-- TITLE -->
+    <div class="font-bold text-2xl flex-shrink-0">
+        VISUALIZATION
+    </div>
+
+    <!-- YEAR -->
+    <div class="flex items-center gap-1">
+        <label class="font-bold">Year:</label>
+        <form method="GET" action="{{ url_for('admin.visualization') }}">
+            <select name="year"
+                    class="border border-[#166D3B] rounded-md p-2"
+                    onchange="this.form.submit()">
+                {% for y in available_years %}
+                    <option value="{{ y }}" {% if year|string == y|string %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+                <option value="All" {% if year|string == 'All' %}selected{% endif %}>All</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- CAMPUS (SUPER ADMIN ONLY) -->
+    {% if is_super_admin %}
+    <div class="flex items-center gap-1">
+        <label class="font-bold">Campus:</label>
+        <form method="GET" action="{{ url_for('admin.visualization') }}">
+            <select name="campus"
+                    class="border border-[#166D3B] rounded-md p-2"
+                    onchange="this.form.submit()">
+                <option value="">All</option>
+                {% for c in available_campuses %}
+                    <option value="{{ c }}" {% if selected_campus == c %}selected{% endif %}>
+                        {{ c }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- GENDER -->
+    <div class="flex items-center gap-1">
+        <label class="font-bold">Gender:</label>
+        <form method="GET" action="{{ url_for('admin.visualization') }}">
+            <select name="gender"
+                    class="border border-[#166D3B] rounded-md p-2"
+                    onchange="this.form.submit()">
+                <option value="All" {% if gender == 'All' %}selected{% endif %}>All</option>
+                <option value="Male" {% if gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if gender == 'Female' %}selected{% endif %}>Female</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- GRAPH TYPE (JS ONLY) -->
+    <div class="flex items-center gap-1">
+        <label class="font-bold">Graph:</label>
+        <select id="chartTypeSelect"
+                class="border border-[#166D3B] rounded-md p-2">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+            <option value="pie">Pie</option>
+        </select>
+    </div>
+
+</div>
+
+
+        <button onclick="openLetterDescription()"
+                class=" text-sm mt-2 bg-[#166D3B] text-white px-4 py-2 rounded-md hover:bg-green-800">
+            Description
+        </button>
+
+    <!-- CHARTS -->
+    <div id="charts-container" class="mt-6"></div>
+
+    <div id="letterDescriptionModal"
+     class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+  
+  <div class="bg-white w-200 max-h-[80vh] overflow-y-auto rounded-md shadow-xl p-6 relative">
+    
+    <button onclick="closeLetterDescription()"
+            class="absolute top-3 right-4 text-gray-500 hover:text-black text-xl">
+      ✕
+    </button>
+
+    <h2 class="text-lg font-bold mb-3 text-[#166D3B]">
+      Letter Descriptions
+    </h2>
+
+    <div id="letterDescriptionContent" class="space-y-3 text-sm"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script id="data-json" type="application/json">
+  {{ all_years_data | tojson }}
+</script>
+
+<script id="letter-desc-data" type="application/json">
+    {{ letter_descriptions | tojson }}
+</script>
+
+<script id="all-programs-json" type="application/json">
+  {{ all_programs | tojson }}
+</script>
+
+<script>
+/* ================== GLOBAL ================== */
+let chartInstances = [];
+let redrawCallbacks = [];
+
+const LETTER_DESCRIPTIONS = JSON.parse(document.getElementById("letter-desc-data").textContent);
+const allData = JSON.parse(document.getElementById("data-json").textContent);
+const ALL_PROGRAMS = JSON.parse(document.getElementById("all-programs-json").textContent);
+const ALL_LETTERS = Array.from({length: 18}, (_, i) => String.fromCharCode(65 + i));
+
+function wrapLabel(label, maxChars = 15) {
+    if (!label) return [''];
+    if (label.length <= maxChars) return [label];
+    const regex = new RegExp(`.{1,${maxChars}}`, 'g');
+    return label.match(regex); // returns array of lines
+}
+
+function getChartLabels(labels, isProgramChart, type) {
+    if (type === "pie") {
+        // Pie chart: join label into a single line or truncate
+        return labels.map(l => Array.isArray(l) ? l.join(' ') : l);
+    } else if (isProgramChart) {
+        // Bar/Line chart: keep multi-line array for bottom axis
+        return labels;
+    }
+    return labels;
+}
+
+function renderChart(ctx, type, labels, data, colors, label, isProgramChart = false) {
+    const chartLabels = getChartLabels(labels, isProgramChart, type);
+
+    return new Chart(ctx, {
+        type,
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: '', // remove dataset label to avoid redundancy
+                data,
+                backgroundColor: colors,
+                borderColor: colors,
+                borderWidth: type === "line" ? 2 : 0,
+                fill: type === "line" ? false : true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: type === "pie" },
+                tooltip: {
+                    callbacks: {
+                        title: function() {
+                            // Remove top title
+                            return '';
+                        },
+                        label: function(context) {
+                            if (isProgramChart) {
+                                // Show: colored dot + program name + value
+                                return ALL_PROGRAMS[context.dataIndex][1] + ': ' + context.dataset.data[context.dataIndex];
+                            } else {
+                                // Letters chart
+                                return ALL_LETTERS[context.dataIndex] + ': ' + context.dataset.data[context.dataIndex];
+                            }
+                        }
+                    }
+                }
+            },
+            scales: type === "pie" ? {} : {
+                y: { beginAtZero: true },
+                x: {
+                    ticks: {
+                        font: { size: isProgramChart ? 8 : 14 },
+                        callback: function(value, index) {
+                            const lbl = chartLabels[index];
+                            return Array.isArray(lbl) ? lbl : [lbl];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/* ================== RENDER ================== */
+const container = document.getElementById("charts-container");
+
+allData.forEach((yearData, idx) => {
+    const section = document.createElement("div");
+    section.className = "mb-12";
+
+    section.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">
+            Year: ${yearData.year} — Gender: ${yearData.gender}
+        </h2>
+
+        <!-- PROGRAM -->
+        <div id="program-card-${idx}" class="bg-white p-6 rounded-md shadow-md border mb-6 relative">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold">Most Chosen Preferred Program</h3>
+                <button
+                    onclick="downloadPDF('program-card-${idx}', 'Program')"
+                    class="text-sm bg-[#166D3B] text-white px-3 py-1 rounded hover:bg-green-800 z-10 relative">
+                    Download PDF
+                </button>
+            </div>
+            <div class="h-[300px]">
+                <canvas id="program-${idx}"></canvas>
+            </div>
+        </div>
+
+        <!-- LETTER -->
+        <div id="letter-card-${idx}" class="bg-white p-6 rounded-md shadow-md border relative">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold">Top Chosen Letters</h3>
+                <button
+                    onclick="downloadPDF('letter-card-${idx}', 'Letter')"
+                    class="text-sm bg-[#166D3B] text-white px-3 py-1 rounded hover:bg-green-800 z-10 relative">
+                    Download PDF
+                </button>
+            </div>
+            <div class="h-[300px]">
+                <canvas id="letter-${idx}"></canvas>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(section);
+
+    // Wrapped program labels (split into multiple lines)
+    const PROGRAM_LABELS = ALL_PROGRAMS.map(p => wrapLabel(p[1], 15));
+    const PROGRAM_COLORS = ALL_PROGRAMS.map(p => p[2] || "#166D3B");
+
+    const programData = PROGRAM_LABELS.map((label, i) =>
+        yearData.preferred_labels.includes(ALL_PROGRAMS[i][1])
+            ? yearData.preferred_counts[yearData.preferred_labels.indexOf(ALL_PROGRAMS[i][1])]
+            : 0
+    );
+
+    const letterData = ALL_LETTERS.map(l =>
+        yearData.top_labels.includes(l)
+            ? yearData.top_counts[yearData.top_labels.indexOf(l)]
+            : 0
+    );
+
+    const letterColors = ALL_LETTERS.map(() => {
+        const hue = Math.floor(Math.random() * 360);
+        return `hsl(${hue}, 70%, 55%)`;
+    });
+
+    let programChart, letterChart;
+
+    function draw(type) {
+        if (programChart) programChart.destroy();
+        if (letterChart) letterChart.destroy();
+
+        // Program chart
+        programChart = renderChart(
+            document.getElementById(`program-${idx}`),
+            type,
+            PROGRAM_LABELS,
+            programData,
+            PROGRAM_COLORS,
+            "Students",
+            true // <--- this makes font smaller and wraps labels
+        );
+
+        // Letter chart
+        letterChart = renderChart(
+            document.getElementById(`letter-${idx}`),
+            type,
+            ALL_LETTERS,
+            letterData,
+            letterColors,
+            "Letter chosen",
+            false
+        );
+        letterChart.options.scales.x.ticks.font = { size: 14 };
+        letterChart.update();
+
+        chartInstances.push(programChart, letterChart);
+    }
+
+    draw(document.getElementById("chartTypeSelect").value);
+    redrawCallbacks.push(draw);
+});
+
+/* ================== DROPDOWN ================== */
+document.getElementById("chartTypeSelect").addEventListener("change", function () {
+    chartInstances.forEach(c => c.destroy());
+    chartInstances = [];
+    redrawCallbacks.forEach(fn => fn(this.value));
+});
+
+function openLetterDescription() {
+    const modal = document.getElementById("letterDescriptionModal");
+    const content = document.getElementById("letterDescriptionContent");
+
+    content.innerHTML = "";
+
+    Object.entries(LETTER_DESCRIPTIONS).forEach(([letter, desc]) => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <strong>${letter}</strong> — ${desc}
+        `;
+        content.appendChild(div);
+    });
+
+    modal.classList.remove("hidden");
+}
+
+function closeLetterDescription() {
+    document.getElementById("letterDescriptionModal").classList.add("hidden");
+}
+
+async function downloadPDF(elementId, chartLabel) {
+    const { jsPDF } = window.jspdf;
+
+    const element = document.getElementById(elementId);
+
+    // 🔒 Hide all buttons inside the element temporarily
+    const buttons = element.querySelectorAll("button");
+    buttons.forEach(btn => btn.style.display = "none");
+
+    const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: "#ffffff"
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth - 20; // 10mm padding left/right
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let y = 10;
+
+    // 🔹 Title metadata
+    const year = "{{ year }}";
+    const gender = "{{ gender }}";
+    const campus = "{{ admin_campus }}";
+    const graphType = document.getElementById("chartTypeSelect").value;
+
+    pdf.setFontSize(12);
+    pdf.text(`AspireMatch Visualization`, 10, y);
+    y += 6;
+    pdf.text(`Campus: ${campus}`, 10, y);
+    y += 6;
+    pdf.text(`Year: ${year} | Gender: ${gender}`, 10, y);
+    y += 6;
+    pdf.text(`Graph: ${graphType.toUpperCase()} | Type: ${chartLabel}`, 10, y);
+    y += 8;
+
+    pdf.addImage(imgData, "PNG", 10, y, imgWidth, imgHeight);
+
+    const filename = `Visualization_${chartLabel}_Campus-${campus}_Year-${year}_Gender-${gender}_${graphType}.pdf`;
+    pdf.save(filename);
+
+    // 🔄 Restore buttons after PDF generation
+    buttons.forEach(btn => btn.style.display = "inline-block");
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STUDENT SIDEBAR</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    aside svg, aside span {
+        transition: all 0.2s ease;
+    }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+<!-- SIDEBAR / BOTTOM NAV -->
+<aside class="
+    fixed z-50 bg-white text-black shadow-md
+    bottom-0 left-0 w-full h-20 rounded-2xl
+    flex 
+    lg:top-[110px] lg:left-6 lg:h-[calc(80vh-70px)] lg:w-64
+    lg:flex-col lg:rounded-2xl lg:border border-[#166D3B]
+">
+    <nav class="w-full h-full p-4">
+        <ul class="
+            flex h-full w-full justify-around items-center
+            lg:flex-col lg:items-stretch lg:justify-start lg:space-y-5
+        ">
+
+            <!-- HOME -->
+            <li class="flex-1 lg:flex-none rounded-2xl
+                {{ 'bg-[#f6ebcd]' if request.path == url_for('student.home') else 'hover:bg-[#f6ebcd]' }}">
+                <a href="{{ url_for('student.home') }}"
+                   class="group flex flex-col lg:flex-row items-center gap-1 lg:gap-3 w-full p-3 transition">
+        
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('student.home') else 'text-black group-hover:text-[#166D3B]' }}">
+                    <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+                    <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+                    </svg>
+
+                    <span class="text-xs lg:text-xl {{ 'text-[#166D3B]' if request.path == url_for('student.home') else 'text-black group-hover:text-[#166D3B]' }}">HOME</span>
+                </a>
+            </li>
+
+{% if survey_result_unlocked %}
+            <!-- RESULTS -->
+            <li class="relative flex-1 lg:flex-none rounded-2xl
+                {{ 'bg-[#f6ebcd]' if request.path in [
+                    url_for('student.surveyResult'),
+                    url_for('student.studentInventoryResult')
+                ] else 'hover:bg-[#f6ebcd]' }}">
+
+                <button id="resultsToggle"
+                        class="group flex flex-col lg:flex-row items-center gap-1 lg:gap-3 w-full p-3 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6
+                    {{ 'text-[#166D3B]' if request.path in [url_for('student.surveyResult'), url_for('student.studentInventoryResult')] else 'text-black group-hover:text-[#166D3B]' }}">
+                    <path d="M11.644 1.59a.75.75 0 0 1 .712 0l9.75 5.25a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.712 0l-9.75-5.25a.75.75 0 0 1 0-1.32l9.75-5.25Z" />
+                    <path d="m3.265 10.602 7.668 4.129a2.25 2.25 0 0 0 2.134 0l7.668-4.13 1.37.739a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.71 0l-9.75-5.25a.75.75 0 0 1 0-1.32l1.37-.738Z" />
+                    <path d="m10.933 19.231-7.668-4.13-1.37.739a.75.75 0 0 0 0 1.32l9.75 5.25c.221.12.489.12.71 0l9.75-5.25a.75.75 0 0 0 0-1.32l-1.37-.738-7.668 4.13a2.25 2.25 0 0 1-2.134-.001Z" />
+                    </svg>
+                    <span class="text-xs lg:text-xl {{ 'text-[#166D3B]' if request.path in [url_for('student.surveyResult'), url_for('student.studentInventoryResult')] else 'text-black group-hover:text-[#166D3B]' }}">RESULTS</span>
+                </button>
+
+                <!-- SUBMENU -->
+                <ul id="resultsSubmenu"
+                    class="hidden absolute bottom-20 left-1/2 -translate-x-1/2
+                           bg-white rounded-xl shadow-lg w-44
+                           lg:static lg:translate-x-0 lg:mt-1 lg:ml-6">
+
+                    <li class="hover:bg-[#f6ebcd] rounded-xl">
+                        <a href="{{ url_for('student.surveyResult') }}"
+                           class="flex items-center gap-2 px-4 py-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                            <path d="M11.7 2.805a.75.75 0 0 1 .6 0A60.65 60.65 0 0 1 22.83 8.72a.75.75 0 0 1-.231 1.337 49.948 49.948 0 0 0-9.902 3.912l-.003.002c-.114.06-.227.119-.34.18a.75.75 0 0 1-.707 0A50.88 50.88 0 0 0 7.5 12.173v-.224c0-.131.067-.248.172-.311a54.615 54.615 0 0 1 4.653-2.52.75.75 0 0 0-.65-1.352 56.123 56.123 0 0 0-4.78 2.589 1.858 1.858 0 0 0-.859 1.228 49.803 49.803 0 0 0-4.634-1.527.75.75 0 0 1-.231-1.337A60.653 60.653 0 0 1 11.7 2.805Z" />
+                            <path d="M13.06 15.473a48.45 48.45 0 0 1 7.666-3.282c.134 1.414.22 2.843.255 4.284a.75.75 0 0 1-.46.711 47.87 47.87 0 0 0-8.105 4.342.75.75 0 0 1-.832 0 47.87 47.87 0 0 0-8.104-4.342.75.75 0 0 1-.461-.71c.035-1.442.121-2.87.255-4.286.921.304 1.83.634 2.726.99v1.27a1.5 1.5 0 0 0-.14 2.508c-.09.38-.222.753-.397 1.11.452.213.901.434 1.346.66a6.727 6.727 0 0 0 .551-1.607 1.5 1.5 0 0 0 .14-2.67v-.645a48.549 48.549 0 0 1 3.44 1.667 2.25 2.25 0 0 0 2.12 0Z" />
+                            <path d="M4.462 19.462c.42-.419.753-.89 1-1.395.453.214.902.435 1.347.662a6.742 6.742 0 0 1-1.286 1.794.75.75 0 0 1-1.06-1.06Z" />
+                            </svg>
+                            Career Interest
+                        </a>
+                    </li>
+
+{% if inventory_result_unlocked %}
+                    <li class="hover:bg-[#f6ebcd] rounded-xl">
+                        <a href="{{ url_for('student.studentInventoryResult') }}"
+                           class="flex items-center gap-2 px-4 py-2">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('student.studentInventoryResult') else 'text-black group-hover:text-[#166D3B]' }}">
+  <path d="M5.566 4.657A4.505 4.505 0 0 1 6.75 4.5h10.5c.41 0 .806.055 1.183.157A3 3 0 0 0 15.75 3h-7.5a3 3 0 0 0-2.684 1.657ZM2.25 12a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3v-6ZM5.25 7.5c-.41 0-.806.055-1.184.157A3 3 0 0 1 6.75 6h10.5a3 3 0 0 1 2.683 1.657A4.505 4.505 0 0 0 18.75 7.5H5.25Z" />
+</svg>
+                            Inventory
+                        </a>
+                    </li>
+{% endif %}
+                </ul>
+            </li>
+{% endif %}
+
+            <!-- NOTIFICATION -->
+            <li class="flex-1 lg:flex-none rounded-2xl
+                {{ 'bg-[#f6ebcd]' if request.path == url_for('student.notification') else 'hover:bg-[#f6ebcd]' }}">
+                <a href="{{ url_for('student.notification') }}"
+                   onclick="clearNotificationBadge()"
+                   class="group flex items-center justify-between w-full p-3 transition">
+
+                    <div class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6
+                        {{ 'text-[#166D3B]' if request.path == url_for('student.notification') else 'text-black group-hover:text-[#166D3B]' }}">
+                        <path fill-rule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="text-xs lg:text-xl {{ 'text-[#166D3B]' if request.path == url_for('student.notification') else 'text-black group-hover:text-[#166D3B]' }}">NOTIFICATION</span>
+                    </div>
+
+                    <span id="notificationBadge"
+                          class="hidden bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+                        0
+                    </span>
+                </a>
+            </li>
+
+            <!-- PROFILE -->
+            <li class="flex-1 lg:flex-none rounded-2xl
+                {{ 'bg-[#f6ebcd]' if request.path == url_for('student.profile') else 'hover:bg-[#f6ebcd]' }}">
+                <a href="{{ url_for('student.profile') }}"
+                   class="group flex flex-col lg:flex-row items-center gap-1 lg:gap-3 w-full p-3 transition">
+
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('student.profile') else 'text-black group-hover:text-[#166D3B]' }}">
+                    <path fill-rule="evenodd" d="M4.5 3.75a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V6.75a3 3 0 0 0-3-3h-15Zm4.125 3a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Zm-3.873 8.703a4.126 4.126 0 0 1 7.746 0 .75.75 0 0 1-.351.92 7.47 7.47 0 0 1-3.522.877 7.47 7.47 0 0 1-3.522-.877.75.75 0 0 1-.351-.92ZM15 8.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5H15ZM14.25 12a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H15a.75.75 0 0 1-.75-.75Zm.75 2.25a.75.75 0 0 0 0 1.5h3.75a.75.75 0 0 0 0-1.5H15Z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="text-xs lg:text-xl {{ 'text-[#166D3B]' if request.path == url_for('student.profile') else 'text-black group-hover:text-[#166D3B]' }}">PROFILE</span>
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+</aside>
+
+<!-- spacer for mobile bottom nav -->
+<div class="h-20 lg:hidden"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // Notification count loader
+    async function loadNotificationCount() {
+        try {
+            const res = await fetch("/student/notification_count");
+            const data = await res.json();
+
+            const badge = document.getElementById("notificationBadge");
+            if (!badge) return;
+
+            if (window.location.pathname === "/student/notification") {
+                badge.classList.add("hidden");
+                return;
+            }
+
+            if (data.count > 0) {
+                badge.textContent = data.count;
+                badge.classList.remove("hidden");
+            } else {
+                badge.classList.add("hidden");
+            }
+        } catch (err) {
+            console.error("Notification count error:", err);
+        }
+    }
+
+    loadNotificationCount();
+    setInterval(loadNotificationCount, 10000);
+
+    // Results submenu toggle
+    const toggle = document.getElementById("resultsToggle");
+    const submenu = document.getElementById("resultsSubmenu");
+
+    toggle?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        submenu.classList.toggle("hidden");
+    });
+
+    document.addEventListener("click", () => {
+        submenu?.classList.add("hidden");
+    });
+
+});
+
+// Clear badge on nav click
+function clearNotificationBadge() {
+    const badge = document.getElementById("notificationBadge");
+    if (badge) {
+        badge.classList.add("hidden");
+        badge.textContent = "0";
+    }
+
+    fetch("/student/notification_mark_all_read", {
+        method: "POST"
+    }).catch(err => console.error(err));
+}
+</script>
+
+</body>
+</html>

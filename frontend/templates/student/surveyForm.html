@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SURVEY FORM</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/studentHeader.html' %}
+
+<!-- MAIN CONTENT -->
+<div class="flex items-center justify-center min-h-screen bg-[#f6ebcd] px-4">
+  <main
+    class="bg-white w-full max-w-md md:max-w-lg lg:max-w-xl
+           p-4 md:p-8 rounded-lg shadow-md border border-green-600"
+  >
+
+    <div class="fixed top-[65px] pl-24 lg:pl-40 z-50">
+
+        <div class="bg-white shadow-lg p-2 rounded-md border text-center">
+
+            <div class="text-xs text-gray-500 font-medium">
+                Survey Time Remaining
+            </div>
+
+            <div id="surveyTimer" class="text-sm font-bold text-green-600">
+                15:00
+            </div>
+
+        </div>
+
+    </div>
+
+    <form id="studentForm" class="space-y-4">
+      <div id="preferredProgramDiv">
+        <label for="preferredProgram"
+               class="block text-base md:text-lg font-semibold mb-1">
+          Select Your Preferred Program:
+        </label>
+        <select
+          id="preferredProgram"
+          name="preferredProgram"
+          class="w-full border rounded-md p-2 text-sm md:text-base"
+          required
+        >
+          <option value="" selected disabled>Programs</option>
+          {% for program in programs %}
+            <option value="{{ program[0] }}">
+              {{ program[0] }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="interestDiv" class="hidden">
+        <div class="mb-4">
+
+          <div class="flex justify-between text-sm font-medium mb-1">
+            <span id="progressText">Pair of Option 1 / 86</span>
+            <span id="progressPercent">0%</span>
+          </div>
+
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div id="progressBar"
+                class="bg-green-700 h-3 rounded-full transition-all duration-300"
+                style="width:0%">
+            </div>
+          </div>
+
+        </div>
+
+    <!-- AI Response always above the options -->
+    <div id="aiResponseWrapper" class="hidden mb-4">
+        <div class="p-3 md:p-4 rounded-md border border-green-600 bg-green-50 space-y-2">
+            <p class="text-xs md:text-sm text-gray-700">
+                <span id="selectedInterest"></span>
+            </p>
+            <p id="aiResponseText" class="text-sm md:text-base text-gray-800"></p>
+        </div>
+    </div>
+
+        <h3 class="text-base md:text-lg font-semibold mb-4 text-center">
+          Select your area of interest:
+        </h3>
+        <div id="interestOptions" class="space-y-2"></div>
+        <p id="errorMsg" class="text-red-600 text-sm mb-2 hidden">
+          Please select an option before proceeding.
+        </p>
+        <div class="flex justify-between gap-2 mt-4">
+          <button type="button" id="backBtn" class="hidden bg-gray-500 text-white
+                   px-4 py-2 rounded hover:bg-gray-600 w-full sm:w-auto">
+            Back </button>
+          <button type="button" id="nextBtn" class="bg-[#166D3B] text-white
+                   px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">
+            Next </button>
+        </div>
+      </div>
+    </form>
+
+<div id="securityPopup"
+     class="fixed inset-0 bg-black/50 hidden
+            flex items-center justify-center
+            z-[999]">
+
+  <div class="bg-white p-6 rounded-xl shadow-xl text-center w-80">
+
+      <h2 class="text-lg font-bold text-red-600 mb-2">
+          Suspicious Activity Detected
+      </h2>
+
+      <p class="text-sm text-gray-700 mb-3">
+          Fast or multiple clicks detected.<br>
+          You will be logged out in 
+          <span id="logoutCountdown" class="font-bold text-red-600">5</span> seconds.
+      </p>
+
+  </div>
+
+</div>
+
+  </main>
+</div>
+
+<script>
+const TOTAL_PAIRS = 86; // Must be first
+
+const surveyAnswers = new Array(TOTAL_PAIRS).fill(null);
+const aiResponses = new Array(TOTAL_PAIRS).fill(null);
+
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+const progressPercent = document.getElementById("progressPercent");
+
+const preferredProgram = document.getElementById("preferredProgram");
+const preferredProgramDiv = document.getElementById("preferredProgramDiv");
+const interestDiv = document.getElementById("interestDiv");
+const interestOptions = document.getElementById("interestOptions");
+
+const backBtn = document.getElementById("backBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+const errorMsg = document.getElementById("errorMsg");
+
+const aiResponseWrapper = document.getElementById("aiResponseWrapper");
+const aiResponseText = document.getElementById("aiResponseText");
+const selectedInterest = document.getElementById("selectedInterest");
+
+let selectedProgram = null;
+let currentIndex = 0;
+let surveySubmitting = false;
+let navigating = false;
+
+let surveyTime = 15 * 60;
+const timerDisplay = document.getElementById("surveyTimer");
+
+let lastClickTime = 0;
+let fastClickCount = 0;
+const FAST_CLICK_LIMIT = 2;   // allowed fast clicks
+const FAST_CLICK_TIME = 340;  // ms threshold
+
+const interestPairs = [
+  [
+    { number: 1, key: "A", text: "Operate a printing press" },
+    { number: 1, key: "B", text: "Study the causes of earthquakes" }
+  ],
+  [
+    { number: 2, key: "C", text: "Plant and harvest crops" },
+    { number: 2, key: "R", text: "Replaces a car window and fender" }
+  ],
+  [
+    { number: 3, key: "E", text: "Analyze reports and records" },
+    { number: 3, key: "F", text: "Operate a machine" }
+  ],
+  [
+    { number: 4, key: "G", text: "Work in an office" },
+    { number: 4, key: "H", text: "Answer costumer questions" }
+  ],
+  [
+    { number: 5, key: "D", text: "Write reports" },
+    { number: 5, key: "J", text: "Helps former prison inmates find work" }
+  ],
+  [
+    { number: 6, key: "L", text: "Design a freeway" },
+    { number: 6, key: "M", text: "Plan educational lessons" }
+  ],
+  [
+    { number: 7, key: "N", text: "balance a checkbook" },
+    { number: 7, key: "O", text: "Take an x -ray" }
+  ],
+  [
+    { number: 8, key: "P", text: "Write a computer program" },
+    { number: 8, key: "Q", text: "Train animals" }
+  ],
+  [
+    { number: 9, key: "C", text: "Be in charge of replanting forest" },
+    { number: 9, key: "A", text: "Acts in TV show or movies" }
+  ],
+  [
+    { number: 10, key: "D", text: "Solve a burglary" },
+    { number: 10, key: "F", text: "Checks product quality" }
+  ],
+  [
+    { number: 11, key: "E", text: "Build an airport" },
+    { number: 11, key: "G", text: "keep company business records" }
+  ],
+  [
+    { number: 12, key: "F", text: "Put together small tools" },
+    { number: 12, key: "P", text: "Design a website" }
+  ],
+  [
+    { number: 13, key: "M", text: "Tutor students" },
+    { number: 13, key: "Q", text: "Works at zoo" }
+  ],
+  [
+    { number: 14, key: "J", text: "Take care of children" },
+    { number: 14, key: "O", text: "Plan special diets" }
+  ],
+  [
+    { number: 15, key: "A", text: "Choreograph a dance" },
+    { number: 15, key: "K", text: "Lobby or show support for a cause" }
+  ],
+  [
+    { number: 16, key: "H", text: "Sell cloths" },
+    { number: 16, key: "E", text: "Work with your hands" }
+  ],
+  [
+    { number: 17, key: "I", text: "Work at an amusement park" },
+    { number: 17, key: "N", text: "Sell insurance" }
+  ],
+  [
+    { number: 18, key: "I", text: "Learn about ethnic groups" },
+    { number: 18, key: "P", text: "Manage an information system" }
+  ],
+  [
+    { number: 19, key: "N", text: "Appraise the value of a house" },
+    { number: 19, key: "M", text: "File books at the library" }
+  ],
+  [
+    { number: 20, key: "M", text: "Grade papers" },
+    { number: 20, key: "R", text: "Operate a train" }
+  ],
+  [
+    { number: 21, key: "L", text: "Order building supplies" },
+    { number: 21, key: "E", text: "Paint motors" }
+  ],
+  [
+    { number: 22, key: "P", text: "Develop new computer games" },
+    { number: 22, key: "H", text: "Buy merchandise for a store" }
+  ],
+  [
+    { number: 23, key: "K", text: "Work to get someone elected" },
+    { number: 23, key: "C", text: "Identify plants in a forest" }
+  ],
+  [
+    { number: 24, key: "D", text: "Guard inmates in a prison" },
+    { number: 24, key: "L", text: "Read blueprints" }
+  ],
+  [
+    { number: 25, key: "H", text: "Line up concerts for a band" },
+    { number: 25, key: "K", text: "Ask people survey questions" }
+  ],
+  [
+    { number: 26, key: "E", text: "Manage a factory" },
+    { number: 26, key: "O", text: "Work as a nurse in a hospital" }
+  ],
+  [
+    { number: 27, key: "A", text: "Paint a portrait" },
+    { number: 27, key: "K", text: "Testify before Congress" }
+  ],
+  [
+    { number: 28, key: "B", text: "Work with a microscope" },
+    { number: 28, key: "I", text: "Schedule tee times at a golf course" }
+  ],
+  [
+    { number: 29, key: "C", text: "Classify plants" },
+    { number: 29, key: "O", text: "Transcribe medical records" }
+  ],
+  [
+    { number: 30, key: "E", text: "Make three-dimensional items" },
+    { number: 30, key: "D", text: "Analyze handwriting" }
+  ],
+  [
+    { number: 31, key: "B", text: "Design indoor sprinkler systems" },
+    { number: 31, key: "F", text: "Run a factory sewing machine" }
+  ],
+  [
+    { number: 32, key: "G", text: "Develop personnel policies" },
+    { number: 32, key: "Q", text: "Train racehorses" }
+  ],
+  [
+    { number: 33, key: "D", text: "Guard an office building" },
+    { number: 33, key: "H", text: "Run a department store" }
+  ],
+  [
+    { number: 34, key: "A", text: "Write for a newspaper" },
+    { number: 34, key: "G", text: "Use a calculator" }
+  ],
+  [
+    { number: 35, key: "O", text: "Help people at a mental health clinic" },
+    { number: 35, key: "L", text: "Remodel old houses" }
+  ],
+  [
+    { number: 36, key: "M", text: "Care for young children" },
+    { number: 36, key: "D", text: "Locate a missing person" }
+  ],
+  [
+    { number: 37, key: "N", text: "Plan estate disbursements/payments" },
+    { number: 37, key: "P", text: "Enter data" }
+  ],
+  [
+    { number: 38, key: "A", text: "Design a book cover" },
+    { number: 38, key: "E", text: "Build toys with written instructions" }
+  ],
+  [
+    { number: 39, key: "B", text: "Figure out why someone is sick" },
+    { number: 39, key: "R", text: "Fly an airplane" }
+  ],
+  [
+    { number: 40, key: "C", text: "Learn how things grow and stay alive" },
+    { number: 40, key: "H", text: "Sell cars" }
+  ],
+  [
+    { number: 41, key: "I", text: "Work as a restaurant host or hostess" },
+    { number: 41, key: "D", text: "Fight fires" }
+  ],
+  [
+    { number: 42, key: "G", text: "Keep payroll records for a company" },
+    { number: 42, key: "J", text: "Work in a nursing home" }
+  ],
+  [
+    { number: 43, key: "G", text: "Hire new staff" },
+    { number: 43, key: "O", text: "Run ventilators/breathing machines" }
+  ],
+  [
+    { number: 44, key: "R", text: "Drive a taxi" },
+    { number: 44, key: "A", text: "Broadcast the news" }
+  ],
+  [
+    { number: 45, key: "K", text: "Audit taxes for the government" },
+    { number: 45, key: "B", text: "Sort and date dinosaur bones" }
+  ],
+  [
+    { number: 46, key: "O", text: "Give shots" },
+    { number: 46, key: "C", text: "Design landscaping" }
+  ],
+  [
+    { number: 47, key: "P", text: "Give tech support to computer users" },
+    { number: 47, key: "D", text: "Work in a courtroom" }
+  ],
+  [
+    { number: 48, key: "Q", text: "Care for injured animals" },
+    { number: 48, key: "I", text: "Serve meals to customers" }
+  ],
+  [
+    { number: 49, key: "F", text: "Install rivets" },
+    { number: 49, key: "Q", text: "Raise worms" }
+  ],
+  [
+    { number: 50, key: "N", text: "Balance accounts" },
+    { number: 50, key: "M", text: "Develop learning games" }
+  ],
+  [
+    { number: 51, key: "J", text: "Read to sick people" },
+    { number: 51, key: "P", text: "Repair computers" }
+  ],
+  [
+    { number: 52, key: "F", text: "Compare sizes and shapes of objects" },
+    { number: 52, key: "Q", text: "Fish" }
+  ],
+  [
+    { number: 53, key: "R", text: "Repair bicycles" },
+    { number: 53, key: "K", text: "Deliver mail" }
+  ],
+  [
+    { number: 54, key: "M", text: "Teach Special Education" },
+    { number: 54, key: "P", text: "Set up a tracking system" }
+  ],
+  [
+    { number: 55, key: "G", text: "Manage a store" },
+    { number: 55, key: "H", text: "Advertise goods and services" }
+  ],
+  [
+    { number: 56, key: "R", text: "Distribute supplies to dentists" },
+    { number: 56, key: "I", text: "Compete in a sports event" }
+  ],
+  [
+    { number: 57, key: "I", text: "Check guests into a hotel" },
+    { number: 57, key: "M", text: "Teach adults to read" }
+  ],
+  [
+    { number: 58, key: "L", text: "Follow step-by-step instructions" },
+    { number: 58, key: "N", text: "Collect past due bills" }
+  ],
+  [
+    { number: 59, key: "L", text: "Build kitchen cabinets" },
+    { number: 59, key: "N", text: "Refinance a mortgage" }
+  ],
+  [
+    { number: 60, key: "A", text: "Sing in a concert" },
+    { number: 60, key: "R", text: "Direct the takeoff/landing of planes" }
+  ],
+  [
+    { number: 61, key: "G", text: "Operate a cash register" },
+    { number: 61, key: "B", text: "Collect rocks" }
+  ],
+  [
+    { number: 62, key: "G", text: "Start a business" },
+    { number: 62, key: "L", text: "Draft a blueprint" }
+  ],
+  [
+    { number: 63, key: "M", text: "Assess student progress" },
+    { number: 63, key: "L", text: "Design an airplane" }
+  ],
+  [
+    { number: 64, key: "O", text: "Wrap a sprained ankle" },
+    { number: 64, key: "I", text: "Guide an international tour group" }
+  ],
+  [
+    { number: 65, key: "P", text: "Solve technical problems" },
+    { number: 65, key: "J", text: "Provide spiritual guidance to others" }
+  ],
+  [
+    { number: 66, key: "Q", text: "Manage a veterinary clinic" },
+    { number: 66, key: "K", text: "Lead others" }
+  ],
+  [
+    { number: 67, key: "E", text: "Operate heavy equipment" },
+    { number: 67, key: "Q", text: "Manage a fish hatchery" }
+  ],
+  [
+    { number: 68, key: "F", text: "Assemble cars" },
+    { number: 68, key: "K", text: "Protect our borders" }
+  ],
+  [
+    { number: 69, key: "A", text: "Play an instrument" },
+    { number: 69, key: "J", text: "Plan activities for adult day care" }
+  ],
+  [
+    { number: 70, key: "C", text: "Research soybean use in paint" },
+    { number: 70, key: "J", text: "Provide consumer information" }
+  ],
+  [
+    { number: 71, key: "D", text: "Guard money in an armored car" },
+    { number: 71, key: "B", text: "Study human behavior" }
+  ],
+  [
+    { number: 72, key: "E", text: "Fix a television set" },
+    { number: 72, key: "M", text: "Run a school" }
+  ],
+  [
+    { number: 73, key: "F", text: "Fix a control panel" },
+    { number: 73, key: "J", text: "Help friends with personal problems" }
+  ],
+  [
+    { number: 74, key: "C", text: "Oversee a logging crew" },
+    { number: 74, key: "B", text: "Study weather conditions" }
+  ],
+  [
+    { number: 75, key: "R", text: "Pack boxes at a warehouse" },
+    { number: 75, key: "A", text: "Teach dancing" }
+  ],
+  [
+    { number: 76, key: "O", text: "Sterilize surgical instruments" },
+    { number: 76, key: "B", text: "Study soil conditions" }
+  ],
+  [
+    { number: 77, key: "N", text: "Play the stock market" },
+    { number: 77, key: "C", text: "Protect the environment" }
+  ],
+  [
+    { number: 78, key: "R", text: "Inspect cargo containers" },
+    { number: 78, key: "F", text: "Work in a cannery" }
+  ],
+  [
+    { number: 79, key: "I", text: "Coach a school sports team" },
+    { number: 79, key: "P", text: "Update a website" }
+  ],
+  [
+    { number: 80, key: "Q", text: "Hunt" },
+    { number: 80, key: "K", text: "Enlist in a branch of the military" }
+  ],
+  [
+    { number: 81, key: "H", text: "Sell sporting goods" },
+    { number: 81, key: "J", text: "Cut and style hair" }
+  ],
+  [
+    { number: 82, key: "B", text: "Experiment to find new metals" },
+    { number: 82, key: "N", text: "Work in a bank" }
+  ],
+  [
+    { number: 83, key: "G", text: "Work with computer programs" },
+    { number: 83, key: "N", text: "Loan money" }
+  ],
+  [
+    { number: 84, key: "L", text: "Hang wallpaper" },
+    { number: 84, key: "D", text: "Make an arrest" }
+  ],
+  [
+    { number: 85, key: "O", text: "Deliver babies" },
+    { number: 85, key: "H", text: "Persuade people to buy something" }
+  ],
+  [
+    { number: 86, key: "H", text: "Stock shelves" },
+    { number: 86, key: "I", text: "Serve concession stand drinks" }
+  ]
+];
+
+function checkFastClick() {
+    const now = Date.now();
+    if (now - lastClickTime < FAST_CLICK_TIME) {
+        fastClickCount++;
+    } else {
+        fastClickCount = 0;
+    }
+    lastClickTime = now;
+
+    if (fastClickCount > FAST_CLICK_LIMIT) {
+        triggerSecurityLogout();
+        return true; // stop further action
+    }
+    return false;
+}
+
+preferredProgram.addEventListener("change", () => {
+    selectedProgram = preferredProgram.value;
+    if(!selectedProgram) return;
+
+    preferredProgramDiv.style.display = "none";
+    interestDiv.style.display = "block";
+
+    currentIndex = 0;
+    renderQuestion();
+});
+
+// --- RENDER QUESTION ---
+function renderQuestion() {
+    errorMsg.classList.add("hidden");
+
+    if (currentIndex < 0) currentIndex = 0;
+    if (currentIndex >= TOTAL_PAIRS) {
+        finishSurvey();
+        return;
+    }
+
+    const pair = interestPairs[currentIndex];
+    if (!pair) return;
+
+    updateProgress(currentIndex + 1);
+
+    // Show AI response for this question (from previous answer)
+    if (aiResponses[currentIndex]) {
+        aiResponseWrapper.classList.remove("hidden");
+        aiResponseText.textContent = aiResponses[currentIndex];
+
+        // Show previous choice text if available
+        if (surveyAnswers[currentIndex - 1]) {
+            const prevChoice = surveyAnswers[currentIndex - 1];
+            const prevText = interestPairs[currentIndex - 1].find(p => p.key === prevChoice).text;
+            selectedInterest.textContent = `${prevChoice} – ${prevText}`;
+        } else {
+            selectedInterest.textContent = "";
+        }
+    } else {
+        aiResponseWrapper.classList.add("hidden");
+        selectedInterest.textContent = "";
+        aiResponseText.textContent = "";
+    }
+
+    // Render options
+    interestOptions.innerHTML = `
+        <div class="mb-4">
+            <label class="block hover:bg-[#f6ebcd] border border-[#166D3B] rounded-md mb-2 p-2">
+                <input type="radio" name="interest" value="${pair[0].key}">
+                ${pair[0].key}. ${pair[0].text}
+            </label>
+            <label class="block hover:bg-[#f6ebcd] border border-[#166D3B] rounded-md p-2">
+                <input type="radio" name="interest" value="${pair[1].key}">
+                ${pair[1].key}. ${pair[1].text}
+            </label>
+        </div>
+    `;
+
+    // Restore previous answer
+    if (surveyAnswers[currentIndex]) {
+        const prev = interestOptions.querySelector(`input[value="${surveyAnswers[currentIndex]}"]`);
+        if (prev) prev.checked = true;
+    }
+
+    // Enable/disable back button
+    backBtn.style.display = currentIndex === 0 ? "none" : "inline-block";
+
+    // Enable next button
+    nextBtn.disabled = false;
+};
+
+// --- HANDLE SELECTION & AUTO NEXT ---
+interestOptions.addEventListener("change", async (e) => {
+    if (e.target.name !== "interest") return;
+    if (checkFastClick() || navigating) return;
+
+    navigating = true;
+
+    const letter = e.target.value;
+    surveyAnswers[currentIndex] = letter;
+
+    try {
+        const res = await fetch("/student/chatbot_receive_interest", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({letter})
+        });
+        const chat = await res.json();
+        aiResponses[currentIndex + 1] = chat.reply;
+    } catch {
+        aiResponses[currentIndex + 1] = "AI explanation unavailable.";
+    }
+
+    // Show AI response immediately for next question
+    if (aiResponses[currentIndex + 1]) {
+        aiResponseWrapper.classList.remove("hidden");
+        aiResponseText.textContent = aiResponses[currentIndex + 1];
+        selectedInterest.textContent = `${letter} – ${interestPairs[currentIndex].find(p => p.key === letter).text}`;
+    }
+
+    setTimeout(() => {
+        // Check fast click again before advancing
+        if (checkFastClick()) {
+            navigating = false;
+            return;
+        }
+
+        currentIndex++;
+        renderQuestion();
+        navigating = false;
+    }, 300);
+});
+
+// --- NEXT BUTTON (manual override) ---
+nextBtn.onclick = async () => {
+    if (checkFastClick() || navigating) return;
+
+    if (navigating) return;
+    navigating = true;
+
+    const selectedRadio = interestOptions.querySelector('input[name="interest"]:checked');
+
+    if (!selectedRadio) {
+        errorMsg.classList.remove("hidden");
+        navigating = false;
+        return;
+    }
+
+    const letter = selectedRadio.value;
+    surveyAnswers[currentIndex] = letter;
+
+    // Fetch AI explanation for next question
+    try {
+        const res = await fetch("/student/chatbot_receive_interest", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({letter})
+        });
+        const chat = await res.json();
+        aiResponses[currentIndex + 1] = chat.reply;
+    } catch {
+        aiResponses[currentIndex + 1] = "AI explanation unavailable.";
+    }
+
+    currentIndex++;
+    renderQuestion();
+    navigating = false;
+};
+
+// --- BACK BUTTON ---
+backBtn.onclick = () => {
+  if (checkFastClick() || navigating) return;
+
+  if (navigating) return;
+  navigating = true;
+
+  if (currentIndex > 0) {
+      currentIndex--;
+      renderQuestion();
+  }
+
+  navigating = false;
+};
+
+/* FINISH SURVEY */
+function finishSurvey() {
+
+  if (!selectedProgram) {
+    alert("Please select preferred program.");
+    return;
+  }
+
+  /* ensure all answered */
+  for (let i = 0; i < TOTAL_PAIRS; i++) {
+
+    if (!surveyAnswers[i]) {
+      alert("Please complete all questions.");
+      currentIndex = i;
+      renderQuestion();
+      return;
+    }
+
+  }
+
+  submitSurvey();
+
+}
+
+
+/* SUBMIT */
+function submitSurvey(){
+
+  if(surveySubmitting) return;
+
+  surveySubmitting = true;
+
+  interestOptions.innerHTML =
+    "<p class='text-blue-600 font-semibold'>Submitting survey...</p>";
+
+  fetch("/student/submit_survey",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      preferred_program:selectedProgram,
+      answers:surveyAnswers
+    })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+
+    if(data.status==="success"){
+
+      interestOptions.innerHTML =
+      "<p class='text-green-600 font-semibold'>Survey submitted successfully</p>";
+
+      setTimeout(()=>{
+        window.location.href="/student/home";
+      },1500);
+
+    }else{
+
+      interestOptions.innerHTML =
+      "<p class='text-red-600 font-semibold'>"+data.message+"</p>";
+
+    }
+
+  })
+  .catch(()=>{
+
+    interestOptions.innerHTML =
+    "<p class='text-red-600 font-semibold'>Submission failed</p>";
+
+});
+
+}
+
+function triggerSecurityLogout(){
+
+  const popup = document.getElementById("securityPopup");
+  const countdown = document.getElementById("logoutCountdown");
+
+  popup.classList.remove("hidden");
+  popup.classList.add("flex");
+
+  let seconds = 5;
+
+  const timer = setInterval(()=>{
+
+      seconds--;
+      countdown.textContent = seconds;
+
+      if(seconds <= 0){
+          clearInterval(timer);
+          window.location.href = "/student/logout";
+      }
+
+  },1000);
+
+}
+
+function updateProgress(qNumber){
+
+  const total = TOTAL_PAIRS;
+
+  const percent = Math.round((qNumber / total) * 100);
+
+  progressBar.style.width = percent + "%";
+
+  progressText.textContent = `Question ${qNumber} / ${total}`;
+  progressPercent.textContent = percent + "%";
+
+}
+
+function startSurveyTimer() {
+    const timer = setInterval(() => {
+        // Calculate minutes and seconds
+        const minutes = Math.floor(surveyTime / 60);
+        const seconds = surveyTime % 60;
+
+        // Display formatted time
+        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // Change color when 1 minute remaining
+        if (surveyTime <= 60) {
+            timerDisplay.classList.remove("text-green-600");
+            timerDisplay.classList.add("text-red-600");
+        }
+
+        // Time up
+        if (surveyTime <= 0) {
+            clearInterval(timer);
+            alert("Time is up. You will be logged out.");
+            window.location.href = "/student/logout";
+        }
+
+        surveyTime--; // decrement
+    }, 1000);
+}
+
+// Start the timer AFTER surveyTime and timerDisplay are defined
+startSurveyTimer();
+</script>
+
+</body>
+</html>

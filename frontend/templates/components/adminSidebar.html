@@ -1,0 +1,122 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN DASHBOARD</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    aside svg, aside span {
+        transition: all 0.2s ease;
+    }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white text-black fixed top-[110px] left-8 h-[calc(85vh-70px)] shadow-md rounded-2xl border border-[#166D3B]">
+        
+        <nav class="mt-8">
+            <ul class="space-y-5">
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path == url_for('admin.dashboard') else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.dashboard') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('admin.dashboard') else 'text-black group-hover:text-[#166D3B]' }}">
+  <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+  <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+</svg>
+
+        <span class="{{ 'text-[#166D3B]' if request.path == url_for('admin.dashboard') else 'text-black group-hover:text-[#166D3B]' }}">DASHBOARD</span>
+    </a>
+</li>
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path in [url_for('admin.respondents'), url_for('admin.adminSurveyResult')] else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.respondents') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path in [url_for('admin.respondents'), url_for('admin.adminSurveyResult')] else 'text-black group-hover:text-[#166D3B]' }}">
+  <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+  <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+</svg>
+
+
+        <span class="{{ 'text-[#166D3B]' if request.path in [url_for('admin.respondents'), url_for('admin.adminSurveyResult')] else 'text-black group-hover:text-[#166D3B]' }}">RESPONDENTS</span>
+    </a>
+</li>
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path in [url_for('admin.adminInventory'), url_for('admin.adminInventoryResult')] else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.adminInventory') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path in [url_for('admin.adminInventory'), url_for('admin.adminInventoryResult')] else 'text-black group-hover:text-[#166D3B]' }}">
+  <path d="M5.566 4.657A4.505 4.505 0 0 1 6.75 4.5h10.5c.41 0 .806.055 1.183.157A3 3 0 0 0 15.75 3h-7.5a3 3 0 0 0-2.684 1.657ZM2.25 12a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3v-6ZM5.25 7.5c-.41 0-.806.055-1.184.157A3 3 0 0 1 6.75 6h10.5a3 3 0 0 1 2.683 1.657A4.505 4.505 0 0 0 18.75 7.5H5.25Z" />
+</svg>
+
+        <span class="{{ 'text-[#166D3B]' if request.path in [url_for('admin.adminInventory'), url_for('admin.adminInventoryResult')] else 'text-black group-hover:text-[#166D3B]' }}">INVENTORY</span>
+    </a>
+</li>
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path == url_for('admin.interviewList') else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.interviewList') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('admin.interviewList') else 'text-black group-hover:text-[#166D3B]' }}">
+  <path d="M12 11.993a.75.75 0 0 0-.75.75v.006c0 .414.336.75.75.75h.006a.75.75 0 0 0 .75-.75v-.006a.75.75 0 0 0-.75-.75H12ZM12 16.494a.75.75 0 0 0-.75.75v.005c0 .414.335.75.75.75h.005a.75.75 0 0 0 .75-.75v-.005a.75.75 0 0 0-.75-.75H12ZM8.999 17.244a.75.75 0 0 1 .75-.75h.006a.75.75 0 0 1 .75.75v.006a.75.75 0 0 1-.75.75h-.006a.75.75 0 0 1-.75-.75v-.006ZM7.499 16.494a.75.75 0 0 0-.75.75v.005c0 .414.336.75.75.75h.005a.75.75 0 0 0 .75-.75v-.005a.75.75 0 0 0-.75-.75H7.5ZM13.499 14.997a.75.75 0 0 1 .75-.75h.006a.75.75 0 0 1 .75.75v.005a.75.75 0 0 1-.75.75h-.006a.75.75 0 0 1-.75-.75v-.005ZM14.25 16.494a.75.75 0 0 0-.75.75v.006c0 .414.335.75.75.75h.005a.75.75 0 0 0 .75-.75v-.006a.75.75 0 0 0-.75-.75h-.005ZM15.75 14.995a.75.75 0 0 1 .75-.75h.005a.75.75 0 0 1 .75.75v.006a.75.75 0 0 1-.75.75H16.5a.75.75 0 0 1-.75-.75v-.006ZM13.498 12.743a.75.75 0 0 1 .75-.75h2.25a.75.75 0 1 1 0 1.5h-2.25a.75.75 0 0 1-.75-.75ZM6.748 14.993a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" />
+  <path fill-rule="evenodd" d="M18 2.993a.75.75 0 0 0-1.5 0v1.5h-9V2.994a.75.75 0 1 0-1.5 0v1.497h-.752a3 3 0 0 0-3 3v11.252a3 3 0 0 0 3 3h13.5a3 3 0 0 0 3-3V7.492a3 3 0 0 0-3-3H18V2.993ZM3.748 18.743v-7.5a1.5 1.5 0 0 1 1.5-1.5h13.5a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5h-13.5a1.5 1.5 0 0 1-1.5-1.5Z" clip-rule="evenodd" />
+</svg>
+
+
+
+        <span class="{{ 'text-[#166D3B]' if request.path == url_for('admin.interviewList') else 'text-black group-hover:text-[#166D3B]' }}">INTERVIEW</span>
+    </a>
+</li>
+
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path == url_for('admin.visualization') else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.visualization') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('admin.visualization') else 'text-black group-hover:text-[#166D3B]' }}">
+  <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75ZM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 0 1-1.875-1.875V8.625ZM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 0 1 3 19.875v-6.75Z" />
+</svg>
+
+
+        <span class="{{ 'text-[#166D3B]' if request.path == url_for('admin.visualization') else 'text-black group-hover:text-[#166D3B]' }}">VISUALIZATIONS</span>
+    </a>
+</li>
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path == url_for('admin.addAdmin') else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.addAdmin') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('admin.addAdmin') else 'text-black group-hover:text-[#166D3B]' }}">
+  <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
+</svg>
+
+
+
+        <span class="{{ 'text-[#166D3B]' if request.path == url_for('admin.addAdmin') else 'text-black group-hover:text-[#166D3B]' }}">ADMINISTRATOR</span>
+    </a>
+</li>
+<li class="m-4 rounded-xl 
+    {{ 'bg-[#f6ebcd]' if request.path == url_for('admin.program') else 'hover:bg-[#f6ebcd]' }}">
+    <a href="{{ url_for('admin.program') }}" 
+       class="flex items-center gap-3 text-xl p-3 group">
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 {{ 'text-[#166D3B]' if request.path == url_for('admin.program') else 'text-black group-hover:text-[#166D3B]' }}">
+  <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clip-rule="evenodd" />
+  <path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
+</svg>
+
+        <span class="{{ 'text-[#166D3B]' if request.path == url_for('admin.program') else 'text-black group-hover:text-[#166D3B]' }}">PROGRAM</span>
+    </a>
+</li>
+            </ul>
+        </nav>
+    </aside>
+
+</body>
+</html>

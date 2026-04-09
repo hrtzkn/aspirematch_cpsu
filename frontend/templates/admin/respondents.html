@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESPONDENTS</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    .hover-scroll {
+        max-width: 250px;
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+    }
+
+    .hover-scroll span {
+        display: inline-block;
+        transform: translateX(0);
+        transition: transform 0.8s ease;
+    }
+
+    .hover-scroll:hover span {
+        transform: translateX(calc(-100% + 220px));
+    }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+    <!-- MAIN CONTENT -->
+    <div class="flex flex-1">
+        <main class="ml-0 lg:ml-60 flex-1 bg-white shadow-md rounded-md border border-[#166D3B] p-1 lg:p-2 mb-0 lg:mb-16 mt-32 lg:mt-20 h-fit">
+            <div class="p-1">
+                <div class="flex flex-wrap justify-between items-center">
+                    <h1 class="text-xs lg:text-2xl font-bold">RESPONDENTS</h1>
+
+                    <form method="GET" action="{{ url_for('admin.respondents') }}" class="flex items-center">
+                        <input type="hidden" name="status" value="{{ status_filter }}">
+                        <input type="hidden" name="q" value="{{ search_query }}">
+                        {% if is_super_admin %}
+                        <input type="hidden" name="campus" value="{{ selected_campus }}">
+                        {% endif %}
+                        <input type="hidden" name="program" value="{{ selected_program }}">
+                        <label class="text-black text-[9px] lg:text-sm font-bold ml-1 lg:ml-2 mr-0 lg:mr-1">SY:</label>
+                        <select name="year" class="border border-[#166D3B] text-[9px] lg:text-sm rounded-lg p-1 lg:p-2"
+                                onchange="this.form.submit()">
+                            {% for y in available_years %}
+                                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+
+                    <form method="GET" action="{{ url_for('admin.respondents') }}" class="flex items-center ml-4">
+                        <input type="hidden" name="year" value="{{ year }}">
+                        <input type="hidden" name="q" value="{{ search_query }}">
+                        {% if is_super_admin %}
+                        <input type="hidden" name="campus" value="{{ selected_campus }}">
+                        {% endif %}
+                        <input type="hidden" name="program" value="{{ selected_program }}">
+                        <label class="text-black text-[9px] lg:text-sm font-bold mr-0 lg:mr-1">Status:</label>
+                        <select name="status" class="border border-[#166D3B] text-[9px] lg:text-sm rounded-lg p-1 lg:p-2"
+                                onchange="this.form.submit()">
+                            <option value="" {% if status_filter == '' %}selected{% endif %}>All</option>
+                            <option value="match" {% if status_filter == 'match' %}selected{% endif %}>Match</option>
+                            <option value="not_match" {% if status_filter == 'not_match' %}selected{% endif %}>Not Match</option>
+                        </select>
+                    </form>
+
+                    <form method="GET" action="{{ url_for('admin.respondents') }}" class="flex items-center gap-2 w-fit max-w-sm ml-4">
+                    <input type="hidden" name="year" value="{{ year }}">
+                    <input type="hidden" name="status" value="{{ status_filter }}">
+                    {% if is_super_admin %}
+                    <input type="hidden" name="campus" value="{{ selected_campus }}">
+                    {% endif %}
+                    <input type="hidden" name="program" value="{{ selected_program }}">
+                    <div class="relative flex-1">
+                        <label for="search" class="sr-only">Search student</label>
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            class="absolute left-3 top-1/2 -translate-y-1/2 size-3 lg:size-5 text-black">
+                        <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
+                        <path fill-rule="evenodd"
+                                d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75
+                                9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.125 4.5a4.125
+                                4.125 0 1 0 2.338 7.524l2.007 2.006a.75.75 0 1 0 1.06-1.06
+                                l-2.006-2.007a4.125 4.125 0 0 0-3.399-6.463Z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                        <!-- Input -->
+                        <input id="search"
+                            type="text"
+                            name="q"
+                            value="{{ search_query }}"
+                            placeholder="Search student..."
+                            class="w-fit pl-10 pr-3 py-1 lg:py-2 border border-[#166D3B] rounded-lg
+                                    text-gray-700 text-[9px] lg:text-sm focus:outline-none focus:ring-2
+                                    focus:ring-[#166D3B]/40">
+                    </div>
+
+                    <!-- Button -->
+                    <button type="submit"
+                            class="bg-[#166D3B] text-white text-[9px] lg:text-sm px-2 lg:px-4 py-1 lg:py-2 rounded-lg
+                                    hover:bg-[#145c33] transition">
+                        Search
+                    </button>
+                    </form>
+                </div>
+<div class="flex items-end gap-6 mt-2">
+{% if is_super_admin %}
+<form method="GET"
+      action="{{ url_for('admin.respondents') }}"
+      class="flex items-center gap-1">
+
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="status" value="{{ status_filter }}">
+    <input type="hidden" name="q" value="{{ search_query }}">
+    <input type="hidden" name="program" value="{{ selected_program }}">
+
+    <label for="campus" class="text-black text-[9px] lg:text-sm justify-center font-bold mb-1">
+        Campus:
+    </label>
+    <select id="campus" name="campus"
+            class="border border-[#166D3B] rounded-md px-3 py-2 text-xs lg:text-sm h-[38px]"
+            onchange="this.form.submit()">
+        <option value="">All Campuses</option>
+        {% for c in campuses %}
+            <option value="{{ c }}" {% if selected_campus == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+    </select>
+</form>
+{% else %}
+<!-- Sub admin: fixed campus -->
+<input type="text"
+       value="{{ admin_campus }}"
+       readonly
+       class="hidden border border-[#166D3B] rounded-md px-3 py-2 text-xs lg:text-sm h-[38px] bg-gray-100 cursor-not-allowed">
+
+<input type="hidden" name="campus" value="{{ admin_campus }}">
+{% endif %}
+    <!-- Program filter -->
+    <form method="GET"
+          action="{{ url_for('admin.respondents') }}"
+          class="flex items-center gap-1">
+
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <input type="hidden" name="q" value="{{ search_query }}">
+
+        {% if is_super_admin %}
+        <input type="hidden" name="campus" value="{{ selected_campus }}">
+        {% endif %}
+
+            <label class="text-black text-[9px] lg:text-sm font-bold mb-1">
+                Program:
+            </label>
+            <select name="program"
+                    onchange="this.form.submit()"
+                    class="border border-[#166D3B] rounded-md px-1 lg:px-3 py-1 lg:py-2 text-[7px] lg:text-sm w-fit h-fit">
+                <option value="">All Programs</option>
+                {% for program in programs %}
+                    <option value="{{ program }}"
+                        {% if program == selected_program %}selected{% endif %}>
+                        {{ program }}
+                    </option>
+                {% endfor %}
+            </select>
+    </form>
+</div>
+
+                <table class="w-fit lg:w-full border border-[#166D3B] mt-3 rounded-lg text-[8px] lg:text-[14px]">
+                    <thead class="bg-[#166D3B] border border-[#166D3B] text-white text-center">
+                        <tr>
+                            <th class="py-1 lg:py-2 px-2 lg:px-4 border">Exam ID</th>
+                            <th class="py-1 lg:py-2 px-2 lg:px-4 border">Student Name</th>
+                            <th class="py-1 lg:py-2 px-2 lg:px-4 border">Preferred Program</th>
+                            <th class="py-1 lg:py-2 px-2 lg:px-4 border">Recommended Program</th>
+                            <th class="py-1 lg:py-2 px-2 lg:px-4 border">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if students %}
+                            {% for student in students %}
+                                <tr class="hover:bg-gray-100">
+                                    <td class="py-1 lg:py-2 px-2 lg:px-4 border text-center">{{ student[0] }}</td>
+                                    <td class="py-1 lg:py-2 px-2 lg:px-4 border text-start">
+                                        <div class="hover-scroll" title="{{ student[1] }}">
+                                            <span>{{ student[1]|upper }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-1 lg:py-2 px-2 lg:px-4 border text-start">
+                                        {% if student[2] %}
+                                            <div class="hover-scroll" title="{{ student[2] }}">
+                                                <span>{{ student[2] }}</span>
+                                            </div>
+                                        {% else %}
+                                           <div class="text-center">
+                                           <span>——</span>
+                                           </div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-1 lg:py-2 px-2 lg:px-4 border text-center">
+                                        {% if student[2] and student[2] != "___" %}
+                                            <a href="{{ url_for('admin.adminSurveyResult', exam_id=student[0]) }}"
+                                            class="bg-[#166D3B] text-white px-3 py-1 rounded-lg shadow hover:bg-[#145c33]">
+                                            Result
+                                            </a>
+                                        {% else %}
+                                            ——
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-1 lg:py-2 px-2 lg:px-4 border text-center">
+                                        <span class="font-semibold {% if student[3] == 'Match' %}text-[#166D3B]{% elif student[3] == 'Not Match' %}text-red-600{% else %}text-gray-500{% endif %}">
+                                            {{ student[3]|upper }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-gray-500">No students found</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+<div class="flex justify-between items-center mt-4">
+  <!-- PREVIOUS -->
+  {% if page > 1 %}
+    <a href="{{ url_for('admin.respondents',
+                        year=year,
+                        status=status_filter,
+                        q=search_query,
+                        campus=selected_campus if is_super_admin else None,
+                        page=page-1) }}"
+       class="bg-gray-300 text-gray-700 p-2 rounded-md
+              hover:bg-black hover:text-white transition flex items-center justify-center">
+
+      <!-- Left Arrow Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365
+                 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385
+                 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0
+                 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72
+                 h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75
+                 0 0 0-1.06-1.06l-3 3Z"
+              clip-rule="evenodd" />
+      </svg> BACK
+    </a>
+  {% else %}
+    <span class="bg-gray-200 text-black p-2 rounded-md flex items-center justify-center cursor-not-allowed">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365
+                 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385
+                 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0
+                 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72
+                 h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75
+                 0 0 0-1.06-1.06l-3 3Z"
+              clip-rule="evenodd" />
+      </svg> BACK
+    </span>
+  {% endif %}
+
+  <!-- PAGE INFO -->
+  <span class="text-gray-700 text-sm">
+    Page {{ page }} of {{ total_pages }}
+  </span>
+
+  <!-- NEXT -->
+  {% if page < total_pages %}
+    <a href="{{ url_for('admin.respondents',
+                        year=year,
+                        status=status_filter,
+                        q=search_query,
+                        campus=selected_campus if is_super_admin else None,
+                        page=page+1) }}"
+       class="bg-gray-300 text-gray-700 p-2 rounded-md
+              hover:bg-black hover:text-white transition flex items-center justify-center"> NEXT
+
+      <!-- Right Arrow Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75
+                 9.75s4.365 9.75 9.75 9.75 9.75-4.365
+                 9.75-9.75S17.385 2.25 12 2.25Zm4.28
+                 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75
+                 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75
+                 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75
+                 0 1 0 1.06 1.06l3-3Z"
+              clip-rule="evenodd" />
+      </svg>
+    </a>
+  {% else %}
+    <span class="bg-gray-200 text-black p-2 rounded-md flex items-center justify-center cursor-not-allowed"> NEXT
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75
+                 9.75s4.365 9.75 9.75 9.75 9.75-4.365
+                 9.75-9.75S17.385 2.25 12 2.25Zm4.28
+                 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75
+                 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75
+                 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75
+                 0 1 0 1.06 1.06l3-3Z"
+              clip-rule="evenodd" />
+      </svg>
+    </span>
+  {% endif %}
+
+</div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

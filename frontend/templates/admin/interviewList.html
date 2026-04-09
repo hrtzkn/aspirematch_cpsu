@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INTERVIEW LIST</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+    <!-- MAIN CONTENT -->
+<div class="flex flex-1">
+    <main class="ml-60 mr-2 flex-1 bg-[#f6ebcd] mt-20 rounded-2xl mb-20">
+        <div class="bg-white p-3 shadow-md rounded-md border border-[#166D3B] ">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold">INTERVIEW LIST</h1>
+                
+                <button id="calendarBtn"
+                    class="flex items-center gap-2 px-4 py-2 bg-[#166D3B] text-white rounded-lg hover:bg-greeb-700 transition">
+                    
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <path d="M8 2v4M16 2v4M3 10h18"/>
+                        <path d="M12 14v4M10 16h4"/>
+                    </svg>
+
+                    <span>Add Date</span>
+                </button>
+                
+                <form method="GET" action="{{ url_for('admin.interviewList') }}" class="flex items-center">
+                  <input type="hidden" name="q" value="{{ search_query }}">
+                  {% if is_super_admin %}
+                      <input type="hidden" name="campus" value="{{ request.args.get('campus','') }}">
+                  {% endif %}
+                    <label class="text-black ml-2 mr-1">SY:</label>
+                    <select name="year" class="border border-[#166D3B] rounded-lg p-2"
+                            onchange="this.form.submit()">
+                        {% for y in available_years %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+
+                <form method="GET"
+                      action="{{ url_for('admin.interviewList') }}"
+                      class="flex items-center gap-2 ml-4 w-fit max-w-sm">
+
+                    <input type="hidden" name="year" value="{{ year }}">
+                    {% if is_super_admin %}
+                        <input type="hidden" name="campus" value="{{ request.args.get('campus','') }}">
+                    {% endif %}
+
+                  <div class="relative flex-1">
+                    <!-- Search Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-black">
+                      <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
+                      <path fill-rule="evenodd"
+                            d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365
+                              9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385
+                              2.25 12 2.25Zm-1.125 4.5a4.125 4.125 0 1 0
+                              2.338 7.524l2.007 2.006a.75.75 0 1 0
+                              1.06-1.06l-2.006-2.007a4.125 4.125 0 0
+                              0-3.399-6.463Z"
+                            clip-rule="evenodd" />
+                    </svg>
+
+                    <input type="text"
+                          name="q"
+                          value="{{ search_query }}"
+                          placeholder="Search student..."
+                          class="w-full pl-10 pr-3 py-2 border border-[#166D3B]
+                                  rounded-lg text-gray-700
+                                  focus:outline-none focus:ring-2
+                                  focus:ring-[#166D3B]/40">
+                  </div>
+
+                  <button type="submit"
+                          class="bg-[#166D3B] text-white px-4 py-2 rounded-lg
+                                hover:bg-[#145c33] transition">
+                    Search
+                  </button>
+                </form>
+            </div>
+
+{% if is_super_admin %}
+<form method="GET" action="{{ url_for('admin.interviewList') }}" class="flex items-center mt-2">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="q" value="{{ search_query }}">
+
+    <label class="text-black font-bold mr-2">Campus:</label>
+    <select name="campus"
+            class="border border-[#166D3B] rounded-md px-3 py-2 text-sm h-[38px]"
+            onchange="this.form.submit()">
+        <option value="">All Campuses</option>
+        {% for c in campuses %}
+            <option value="{{ c.campus_name }}" {% if selected_campus == c.campus_name %}selected{% endif %}>
+                {{ c.campus_name }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+{% else %}
+<!-- Sub admin: fixed campus -->
+<input type="text"
+       value="{{ admin_campus }}"
+       readonly
+       class="hidden border border-[#166D3B] rounded-md px-3 py-2 text-sm h-[38px] bg-gray-100 cursor-not-allowed">
+
+<input type="hidden" name="campus" value="{{ admin_campus }}">
+{% endif %}
+
+            <table class="w-full border border-[#166D3B] mt-3 rounded-lg text-[14px]">
+              <thead class="bg-[#166D3B] text-white">
+                  <tr>
+                      <th class="py-3 px-4 text-left">Exam ID</th>
+                      <th class="py-3 px-4 text-left">Student Name</th>
+                      <th class="py-3 px-4 text-left">Interview Schedule</th>
+                      <th class="py-3 px-4 text-left">Questions</th>
+                  </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                  {% if students %}
+                      {% for id, exam_id, fullname, schedule, has_interview in students %}
+                          <tr>
+                              <td class="py-2 px-4">{{ exam_id }}</td>
+                              <td class="py-2 px-4">{{ fullname|upper }}</td>
+                              <td class="py-2 px-4">
+                                  {% if schedule %}
+                                      {{ schedule }}
+                                  {% else %}
+                                      <span class="text-gray-500 italic">Not yet scheduled</span>
+                                  {% endif %}
+                              </td>
+                              <td class="py-2 px-4">
+                                <a href="#" 
+                                  class="generate-ai bg-[#166D3B] text-white px-3 py-1 rounded-lg shadow hover:bg-[#145c33]"
+                                  data-id="{{ id }}"
+                                >
+                                  {{ "View" if has_interview else "Generate" }}
+                                </a>
+                              </td>
+                          </tr>
+                      {% endfor %}
+                  {% else %}
+                      <tr>
+                          <td colspan="4" class="py-4 text-center text-gray-500">No students found.</td>
+                      </tr>
+                  {% endif %}
+              </tbody>
+          </table>
+<div class="flex justify-between items-center mt-4">
+
+  <!-- PREVIOUS -->
+  {% if page > 1 %}
+    <a href="{{ url_for('admin.interviewList',
+                        year=year,
+                        q=search_query,
+                        campus=request.args.get('campus',''),
+                        page=page-1) }}"
+       class="bg-gray-300 text-gray-700 p-2 rounded-md
+              hover:bg-black hover:text-white transition flex items-center justify-center">
+
+      <!-- Left Arrow Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365
+                 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385
+                 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0
+                 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72
+                 h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75
+                 0 0 0-1.06-1.06l-3 3Z"
+              clip-rule="evenodd" />
+      </svg> BACK
+    </a>
+  {% else %}
+    <span class="bg-gray-200 text-black p-2 rounded-md flex items-center justify-center cursor-not-allowed">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365
+                 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385
+                 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0
+                 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72
+                 h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75
+                 0 0 0-1.06-1.06l-3 3Z"
+              clip-rule="evenodd" />
+      </svg> BACK
+    </span>
+  {% endif %}
+
+  <!-- PAGE INFO -->
+  <span class="text-gray-700 text-sm">
+    Page {{ page }} of {{ total_pages }}
+  </span>
+
+  <!-- NEXT -->
+  {% if page < total_pages %}
+    <a href="{{ url_for('admin.interviewList',
+                        year=year,
+                        q=search_query,
+                        campus=request.args.get('campus',''),
+                        page=page+1) }}"
+       class="bg-gray-300 text-gray-700 p-2 rounded-md
+              hover:bg-black hover:text-white transition flex items-center justify-center"> NEXT
+
+      <!-- Right Arrow Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75
+                 9.75s4.365 9.75 9.75 9.75 9.75-4.365
+                 9.75-9.75S17.385 2.25 12 2.25Zm4.28
+                 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75
+                 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75
+                 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75
+                 0 1 0 1.06 1.06l3-3Z"
+              clip-rule="evenodd" />
+      </svg>
+    </a>
+  {% else %}
+    <span class="bg-gray-200 text-black p-2 rounded-md flex items-center justify-center cursor-not-allowed"> NEXT
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           fill="currentColor" class="size-6">
+        <path fill-rule="evenodd"
+              d="M12 2.25c-5.385 0-9.75 4.365-9.75
+                 9.75s4.365 9.75 9.75 9.75 9.75-4.365
+                 9.75-9.75S17.385 2.25 12 2.25Zm4.28
+                 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75
+                 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75
+                 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75
+                 0 1 0 1.06 1.06l3-3Z"
+              clip-rule="evenodd" />
+      </svg>
+    </span>
+  {% endif %}
+
+</div>
+
+        </div>
+
+<div id="calendarOverlay" 
+     class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50">
+    <div id="calendarContainer" 
+        class="bg-white shadow-lg rounded-lg p-4 w-96">
+        
+        <h2 class="text-lg font-bold text-center mb-2">Select Date</h2>
+
+        <div class="flex justify-between items-center mb-3">
+            <select id="yearSelect" class="border border-gray-300 rounded-lg p-2">
+            </select>
+            <span id="monthLabel" class="font-bold"></span>
+            <div class="flex space-x-2">
+                <button id="prevMonth" class="px-2 py-1 bg-gray-200 rounded">⬅</button>
+                <button id="nextMonth" class="px-2 py-1 bg-gray-200 rounded">➡</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-7 text-center font-medium mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div>
+            <div>Wed</div><div>Thu</div><div>Fri</div>
+            <div>Sat</div>
+        </div>
+
+        <div id="calendarDays" class="grid grid-cols-7 text-center gap-1 mb-4"></div>
+
+        <div id="timeSection" class="hidden mt-4">
+            <p class=" text-xs mb-2">📌 Selected Date: 
+                <span id="selectedDate" class="font-bold text-xs text-blue-600"></span>
+            </p>
+
+            <h3 class="text-lg text-center font-semibold mb-2">Select Time</h3>
+            <div class="flex flex-col space-y-3">
+                <label class="flex items-center space-x-2">
+                    <span class="w-28">Start Time:</span>
+                    <input type="time" id="startTime" onclick="this.showPicker()" 
+                        class="border border-gray-300 rounded-lg px-2 py-1 w-full">
+                </label>
+
+                <label class="flex items-center space-x-2">
+                    <span class="w-28">End Time:</span>
+                    <input type="time" id="endTime" onclick="this.showPicker()" 
+                        class="border border-gray-300 rounded-lg px-2 py-1 w-full">
+                </label>
+            </div>
+
+            <p id="timeError" class="text-red-600 text-sm mt-2 hidden">
+                ⚠ End Time must be later than Start Time.
+            </p>
+
+            <div id="slotSection" class="hidden mt-4">
+                <label class="flex items-center space-x-2">
+                    <span class="w-40">Number of Student (Slot):</span>
+                    <input type="number" id="studentSlot" min="1" max="10"
+                        class="border border-gray-300 rounded-lg px-2 py-1 w-full"
+                        placeholder="Enter slot count">
+                </label>
+
+                <p id="saveMessage" class="text-sm mt-2 hidden"></p>
+            </div>
+        </div>
+
+        <div class="flex justify-between space-x-2 mt-6">
+            <button id="saveScheduleBtn" disabled 
+                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                Save Schedule
+            </button>
+            <button id="closeCalendar" 
+                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="aiModal" 
+     class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+
+  <div class="bg-white w-[700px] max-h-[500px] overflow-y-auto p-6 rounded-xl shadow-xl relative">
+
+    <h2 class="text-xl font-bold text-[#166D3B] mb-3">
+        AI Assisted Interview
+    </h2>
+
+    <div id="aiLoading" class="text-center py-5 hidden">
+        Loading...
+    </div>
+
+    <div id="aiResults" class="hidden space-y-4">
+
+        <div>
+            <h3 class="font-semibold text-[#166D3B]">1. Interview Questions</h3>
+            <div id="aiQuestions" class="p-3 bg-gray-100 rounded"></div>
+        </div>
+
+        <div>
+            <h3 class="font-semibold text-[#166D3B]">2. Reason for Mismatch</h3>
+            <div id="aiMismatch" class="p-3 bg-gray-100 rounded"></div>
+        </div>
+
+        <div>
+            <h3 class="font-semibold text-[#166D3B]">3. Talking Points for Counselors</h3>
+            <div id="aiTalkingPoints" class="p-3 bg-gray-100 rounded"></div>
+        </div>
+
+    </div>
+
+    <button id="closeAiModal"
+        class="absolute top-3 right-3 text-gray-500 hover:text-black">
+        ✖
+    </button>
+
+  </div>
+</div>
+
+    </main>
+</div>
+
+<script>
+  const calendarBtn = document.getElementById("calendarBtn");
+  const calendarOverlay = document.getElementById("calendarOverlay");
+  const calendarContainer = document.getElementById("calendarContainer");
+  const yearSelect = document.getElementById("yearSelect");
+  const monthLabel = document.getElementById("monthLabel");
+  const calendarDays = document.getElementById("calendarDays");
+  const prevMonthBtn = document.getElementById("prevMonth");
+  const nextMonthBtn = document.getElementById("nextMonth");
+  const closeCalendar = document.getElementById("closeCalendar");
+  const timeSection = document.getElementById("timeSection");
+  const selectedDateSpan = document.getElementById("selectedDate");
+
+  const months = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  let today = new Date();
+  let currentMonth = today.getMonth();
+  let currentYear = today.getFullYear();
+
+  for (let y = currentYear - 10; y <= currentYear + 10; y++) {
+    let option = document.createElement("option");
+    option.value = y;
+    option.textContent = y;
+    if (y === currentYear) option.selected = true;
+    yearSelect.appendChild(option);
+  }
+
+  function renderCalendar(month, year) {
+    monthLabel.textContent = months[month];
+    calendarDays.innerHTML = "";
+
+    let firstDay = new Date(year, month).getDay();
+    let daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.appendChild(document.createElement("div"));
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      let cell = document.createElement("div");
+      cell.textContent = d;
+      cell.className = "cursor-pointer p-2 rounded hover:bg-blue-100";
+
+      if (d === today.getDate() && year === today.getFullYear() && month === today.getMonth()) {
+        cell.classList.add("bg-blue-500","text-white","font-bold");
+      }
+
+      cell.addEventListener("click", () => {
+        let fullDate = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        selectedDateSpan.textContent = fullDate;
+        timeSection.classList.remove("hidden");
+      });
+
+      calendarDays.appendChild(cell);
+    }
+  }
+
+  renderCalendar(currentMonth, currentYear);
+
+  prevMonthBtn.addEventListener("click", () => {
+    currentMonth--;
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+      yearSelect.value = currentYear;
+    }
+    renderCalendar(currentMonth, currentYear);
+  });
+
+  nextMonthBtn.addEventListener("click", () => {
+    currentMonth++;
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+      yearSelect.value = currentYear;
+    }
+    renderCalendar(currentMonth, currentYear);
+  });
+
+  yearSelect.addEventListener("change", () => {
+    currentYear = parseInt(yearSelect.value);
+    renderCalendar(currentMonth, currentYear);
+  });
+
+  calendarBtn.addEventListener("click", () => {
+    calendarOverlay.classList.remove("hidden");
+    timeSection.classList.add("hidden");
+  });
+
+  closeCalendar.addEventListener("click", () => {
+    calendarOverlay.classList.add("hidden");
+  });
+
+  calendarOverlay.addEventListener("click", (e) => {
+    if (!calendarContainer.contains(e.target)) {
+      calendarOverlay.classList.add("hidden");
+    }
+  });
+
+const startTimeInput = document.getElementById("startTime");
+const endTimeInput = document.getElementById("endTime");
+const timeError = document.getElementById("timeError");
+
+const slotSection = document.getElementById("slotSection");
+const slotInput = document.getElementById("studentSlot");
+
+function toggleSaveButton() {
+  const slotCount = parseInt(slotInput.value, 10);
+
+  if (
+    startTimeInput.value &&
+    endTimeInput.value &&
+    !timeError.classList.contains("hidden") === false &&
+    slotCount >= 1 &&
+    slotCount <= 10
+  ) {
+    saveBtn.disabled = false;
+    saveBtn.className =
+      "px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600";
+  } else {
+    saveBtn.disabled = true;
+    saveBtn.className =
+      "px-4 py-2 bg-green-300 text-white rounded-lg cursor-not-allowed";
+  }
+}
+
+function validateTimes() {
+  const start = startTimeInput.value;
+  const end = endTimeInput.value;
+
+  if (start && end && end <= start) {
+    timeError.classList.remove("hidden");
+    endTimeInput.value = "";
+    slotSection.classList.add("hidden");
+  } else if (start && end) {
+    timeError.classList.add("hidden");
+    slotSection.classList.remove("hidden");
+  } else {
+    slotSection.classList.add("hidden");
+  }
+
+  toggleSaveButton();
+}
+
+startTimeInput.addEventListener("change", validateTimes);
+endTimeInput.addEventListener("change", validateTimes);
+slotInput.addEventListener("input", toggleSaveButton);
+
+const saveBtn = document.getElementById("saveScheduleBtn");
+const saveMessage = document.getElementById("saveMessage");
+
+saveBtn.addEventListener("click", async () => {
+  const selectedDate = selectedDateSpan.textContent;
+  const startTime = startTimeInput.value;
+  const endTime = endTimeInput.value;
+  const slotCount = document.getElementById("studentSlot").value;
+
+  if (!selectedDate || !startTime || !endTime || !slotCount) {
+    saveMessage.textContent = "⚠ Please fill all fields.";
+    saveMessage.className = "text-red-600 text-sm mt-2";
+    saveMessage.classList.remove("hidden");
+
+    setTimeout(() => {
+      saveMessage.classList.add("hidden");
+    }, 3000);
+
+    return;
+  }
+
+  try {
+    const response = await fetch("/admin/save_schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: selectedDate,
+        start_time: startTime,
+        end_time: endTime,
+        slot_count: slotCount
+      })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      saveMessage.textContent = "✅ Schedule saved successfully!";
+      saveMessage.className = "text-green-600 text-sm mt-2";
+      saveMessage.classList.remove("hidden");
+
+      // ✅ CLOSE CALENDAR
+      calendarOverlay.classList.add("hidden");
+
+      // OPTIONAL: reset fields after save
+      startTimeInput.value = "";
+      endTimeInput.value = "";
+      slotInput.value = "";
+      selectedDateSpan.textContent = "";
+      timeSection.classList.add("hidden");
+      slotSection.classList.add("hidden");
+
+    } else {
+      saveMessage.textContent = "⚠ " + data.error;
+      saveMessage.className = "text-red-600 text-sm mt-2";
+      saveMessage.classList.remove("hidden");
+
+      // ⏱ auto-hide after 3 sec
+      setTimeout(() => {
+        saveMessage.classList.add("hidden");
+      }, 3000);
+    }
+    saveMessage.classList.remove("hidden");
+  } catch (err) {
+    saveMessage.textContent = "⚠ Server error.";
+    saveMessage.className = "text-red-600 text-sm mt-2";
+    saveMessage.classList.remove("hidden");
+  }
+});
+
+document.querySelectorAll(".generate-ai").forEach(btn => {
+    btn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const studentId = this.dataset.id;
+        const isView = this.textContent.trim() === "View";
+
+        if (this.dataset.loading === "true") return;
+        this.dataset.loading = "true";
+
+        // Show modal
+        document.getElementById("aiModal").classList.remove("hidden");
+        document.getElementById("aiResults").classList.add("hidden");
+
+        const loadingEl = document.getElementById("aiLoading");
+        loadingEl.textContent = isView 
+            ? "Loading interview..." 
+            : "Generating interview insights...";
+        loadingEl.classList.remove("hidden");
+
+        fetch(`/admin/interviewAI/${studentId}`)
+            .then(res => res.json())
+            .then(data => {
+                loadingEl.classList.add("hidden");
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById("aiQuestions").innerHTML =
+                    `<ul class="list-disc list-inside">
+                        ${data.questions.map(q => `<li>${q}</li>`).join("")}
+                    </ul>`;
+
+                document.getElementById("aiMismatch").innerHTML =
+                    `<p>${data.mismatch_reason}</p>`;
+
+                document.getElementById("aiTalkingPoints").innerHTML =
+                    `<ul class="list-disc list-inside">
+                        ${data.talking_points.map(p => `<li>${p}</li>`).join("")}
+                    </ul>`;
+
+                document.getElementById("aiResults").classList.remove("hidden");
+
+                // Switch to VIEW after first generate
+                btn.textContent = "View";
+            })
+            .catch(err => {
+                console.error(err);
+                loadingEl.textContent = "Failed to load data.";
+            })
+            .finally(() => {
+                btn.dataset.loading = "false";
+            });
+    });
+});
+
+// Close modal
+document.getElementById("closeAiModal").onclick = function () {
+    document.getElementById("aiModal").classList.add("hidden");
+};
+
+// Click outside to close
+document.getElementById("aiModal").addEventListener("click", function(e) {
+    const modalContent = this.querySelector("div.bg-white");
+    if (!modalContent.contains(e.target)) {
+        this.classList.add("hidden");
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN DASHBOARD</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+    <!-- MAIN CONTENT -->
+    <div class="flex flex-1 p-2 lg:p-0">
+        <main class="ml-0 lg:ml-60 mr-0 lg:mr-2 flex-1 bg-white p-6 mb-0 lg:mb-16 mt-32 lg:mt-20 shadow-md rounded-md border border-[#166D3B] h-fit">
+
+<!-- TOP CONTROLS: Import/Add/Search/Year -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-2 w-full">
+
+    <!-- LEFT CONTROLS: Import & Add -->
+    <div class="flex flex-row items-center gap-2 lg:gap-3 w-full sm:w-auto">
+        <!-- Import Excel Form -->
+        <form action="/admin/upload" method="POST" enctype="multipart/form-data" id="uploadForm"
+              class="bg-[#166D3B] rounded-md hover:bg-green-700 flex w-full sm:w-auto">
+            <input type="file" name="file" accept=".xlsx, .xls" id="fileInput" class="hidden"
+                   onchange="document.getElementById('uploadForm').submit();">
+            <button type="button"
+                    onclick="this.innerText='Uploading...'; document.getElementById('fileInput').click();"
+                    class="text-white text-[12px] lg:text-sm p-1 lg:px-4 lg:py-2 w-full lg:w-auto text-center">
+                Import Excel File
+            </button>
+        </form>
+
+        <!-- Add Student Button -->
+        <button onclick="openAddStudentPopup()"
+                class="bg-[#166D3B] text-white text-[12px] lg:text-sm p-1 lg:px-4 lg:py-2 rounded-md hover:bg-green-700 w-full sm:w-auto">
+            Add Student Manually
+        </button>
+    </div>
+
+    <div class="flex flex-row items-center gap-2 lg:gap-20 w-full sm:w-auto">
+    <!-- YEAR SELECT -->
+    <form method="GET" action="{{ url_for('admin.dashboard') }}" class="flex items-center gap-1 lg:gap-2 w-fit">
+        <input type="hidden" name="q" value="{{ search_query }}">
+        <input type="hidden" name="campus" value="{{ selected_campus }}">
+        <label class="font-semibold text-black text-[12px] lg:text-sm">SY:</label>
+        <select name="year"
+                class="bg-white border border-[#166D3B] rounded-md p-1 lg:p-2 text-[10px] lg:text-sm w-fit"
+                onchange="this.form.submit()">
+            {% for y in available_years %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <!-- SEARCH BAR -->
+    <form method="GET" action="{{ url_for('admin.dashboard') }}"
+          class="flex items-center gap-1 lg:gap-2 w-full lg:w-96">
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="campus" value="{{ selected_campus }}">
+
+        <div class="relative flex-1 w-full">
+            <label for="search" class="sr-only">Search student</label>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 24 24"
+                 fill="currentColor"
+                 class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black">
+                <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
+                <path fill-rule="evenodd"
+                      d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75
+                      9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.125 4.5a4.125
+                      4.125 0 1 0 2.338 7.524l2.007 2.006a.75.75 0 1 0 1.06-1.06
+                      l-2.006-2.007a4.125 4.125 0 0 0-3.399-6.463Z"
+                      clip-rule="evenodd" />
+            </svg>
+            <input id="search" type="text" name="q" value="{{ search_query }}"
+                   placeholder="student to update"
+                   class="w-full pl-10 pr-3 py-1 lg:py-2 border border-[#166D3B] rounded-lg
+                                    text-gray-700 text-[9px] lg:text-sm focus:outline-none focus:ring-2
+                                    focus:ring-[#166D3B]/40">
+        </div>
+
+        <button type="submit"
+                class="bg-[#166D3B] text-white p-1 lg:px-4 lg:py-2 rounded-md hover:bg-[#145c33] text-[12px] lg:text-base w-fit">
+            Search
+        </button>
+    </form>
+    </div>
+</div>
+
+<!-- POPUPS (ERROR / SUCCESS) -->
+{% if error or success %}
+<div id="popupModal"
+     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+    <div class="bg-white w-full max-w-md rounded-xl shadow-xl p-6 text-center">
+        {% if error %}
+            <h2 class="text-red-600 text-xl font-bold mb-3">Upload Failed</h2>
+            <p class="text-gray-700">{{ error }}</p>
+        {% else %}
+            <h2 class="text-green-600 text-xl font-bold mb-3">Upload Successful</h2>
+            <p class="text-gray-700">{{ message }}</p>
+        {% endif %}
+        <button onclick="closePopup()"
+                class="mt-5 bg-[#166D3B] text-white px-5 py-2 rounded-md hover:bg-green-700 w-full sm:w-auto">
+            OK
+        </button>
+    </div>
+</div>
+{% endif %}
+
+{% if is_super_admin %}
+<form method="GET" action="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2 mt-4">
+    <input type="hidden" name="year" value="{{ year }}">
+    <input type="hidden" name="q" value="{{ search_query }}">
+
+    <label for="campus" class="text-black text-[12px] lg:text-sm font-bold">Campus:</label>
+    <select id="campus" name="campus"
+            class="border border-[#166D3B] rounded-md p-1 lg:p-2 text-[12px] lg:text-sm"
+            onchange="this.form.submit()">
+        <option value="">All Campuses</option>
+
+        {% for campus in campuses %}
+            <option value="{{ campus }}"
+                {% if selected_campus == campus %}selected{% endif %}>
+                {{ campus }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %}
+
+<!-- Student Totals with Curve -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+
+    <!-- Students Curve Card -->
+    <div class="bg-white p-6 rounded-md shadow-md border border-[#166D3B] relative flex flex-col items-center">
+        <h3 class="text-black text-sm lg:text-lg font-bold mb-4">
+            Students
+            {% if selected_campus %}
+                - {{ selected_campus }}
+            {% else %}
+                {% if is_super_admin %}
+                    (All Campuses)
+                {% endif %}
+            {% endif %}
+        </h3>
+
+        <!-- Doughnut / C Curve Container -->
+        <div class="relative w-40 h-40 flex items-center justify-center">
+            <svg viewBox="0 0 36 36" class="w-full h-full">
+                <!-- Background Circle -->
+                <path
+                    class="text-gray-200"
+                    d="M18 2.0845
+                    a 15.9155 15.9155 0 1 1 0 31.831
+                    a 15.9155 15.9155 0 1 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="4"
+                />
+
+                <!-- Completed Students -->
+                {% set completed_percentage = ((total_students - pending_students) / total_students * 100) if total_students > 0 else 0 %}
+                <path
+                    class="text-[#166D3B]"
+                    d="M18 2.0845
+                    a 15.9155 15.9155 0 1 1 0 31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    stroke-dasharray="{{ completed_percentage }}, 100"
+                    stroke-linecap="round"
+                    transform="rotate(-90 18 18)"
+                />
+            </svg>
+
+            <!-- Percentage inside Circle -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span class="text-2xl font-bold text-[#166D3B]">{{ completed_percentage|round(0) }}%</span>
+                <span class="text-sm text-gray-500">Completed</span>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex justify-center mt-4 space-x-6 text-sm">
+            <div class="flex items-center space-x-1">
+                <span class="w-4 h-4 bg-[#166D3B] inline-block rounded"></span>
+                <span>Completed</span>
+            </div>
+            <div class="flex items-center space-x-1">
+                <span class="w-4 h-4 bg-gray-200 inline-block rounded"></span>
+                <span>Pending</span>
+            </div>
+        </div>
+
+        <!-- Total and Pending Numbers -->
+        <div class="mt-4 flex justify-between w-full px-6 text-md text-gray-700">
+            <span class="font-bold">Total: {{ total_students }}</span>
+            <span class="font-bold">Pending: {{ pending_students }}</span>
+        </div>
+    </div>
+
+    <!-- Admins Section -->
+    <div class="bg-white max-h-[350px] p-6 rounded-md shadow-md border border-[#166D3B] flex flex-col">
+        
+        <!-- Header (fixed) -->
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-black text-sm lg:text-lg font-bold">
+                Admins
+                {% if selected_campus %}
+                    - {{ selected_campus }}
+                {% elif is_super_admin %}
+                    (All Campuses)
+                {% endif %}
+            </h3>
+            <a href="{{ url_for('admin.addAdmin') }}"
+            class="bg-[#166D3B] text-white p-1 lg:px-4 lg:py-2 text-[12px] lg:text-sm rounded hover:bg-[#145a2d]">
+            Add Admin
+            </a>
+        </div>
+
+        <!-- Scrollable Table Wrapper -->
+        <div class="flex-1 overflow-y-auto border border-gray-200 rounded-md">
+            <table class="w-full text-left text-xs lg:text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-2 border-b">Full Name</th>
+                        <th class="px-4 py-2 border-b">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admin in admins %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 border-b">{{ admin[0]|upper }}</td>
+                        <td class="px-4 py-2 border-b">{{ admin[1]|upper }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="px-4 py-4 text-center text-gray-500">
+                            No admins found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+        </main>        
+    </div>
+
+{% if search_query and searched_students %}
+<!-- Overlay -->
+<div id="searchOverlay" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div id="searchModal" class="bg-white rounded-lg shadow-lg w-[95%] max-w-3xl p-5 relative">
+
+        <!-- Close button -->
+        <button id="closeSearchBtn"
+                class="absolute top-2 right-3 text-xl font-bold text-gray-600 hover:text-black">
+            ✕
+        </button>
+
+        <h2 class="text-lg font-semibold mb-4 text-center">
+            Student Information {{ year }}
+        </h2>
+
+        <div class="overflow-x-auto max-h-[60vh]">
+            {% if search_query and searched_students %}
+            <table class="w-full border border-gray-300 text-sm">
+                <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                    <th class="border px-3 py-2">Exam ID</th>
+                    <th class="border px-3 py-2">Full Name</th>
+                    <th class="border px-3 py-2">Gender</th>
+                    <th class="border px-3 py-2">Email</th>
+                    <th class="border px-3 py-2">Action</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for s in searched_students %}
+                <tr class="text-center hover:bg-gray-50">
+                    <td class="border px-3 py-2">{{ s[1] }}</td>
+                    <td class="border px-3 py-2">{{ s[2]|upper }}</td>
+                    <td class="border px-3 py-2">{{ s[3] }}</td>
+                    <td class="border px-3 py-2">{{ s[4] }}</td>
+                    <td class="border px-3 py-2">
+                        <div class="flex items-center justify-center gap-3">
+
+                            <!-- EDIT ICON -->
+                            <button
+                                onclick="openEditModal('{{ s[0] }}','{{ s[2] }}','{{ s[3] }}','{{ s[4] }}')"
+                                title="Edit student"
+                                class="text-[#166D3B] hover:text-black transition">
+                                
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    class="w-5 h-5">
+                                    <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157
+                                            3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712Z"/>
+                                    <path d="M19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32
+                                            2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25
+                                            0 0 0 2.214-1.32l8.4-8.4Z"/>
+                                    <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5
+                                            a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5
+                                            0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5
+                                            1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"/>
+                                </svg>
+                            </button>
+
+                            <!-- DELETE ICON -->
+                            <button
+                                onclick="openDeleteModal('{{ s[0] }}')"
+                                title="Delete student"
+                                class="text-red-600 hover:text-black transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                                <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="flex items-center justify-center h-40">
+                <span class="text-gray-500 text-lg font-semibold">No students match your search.</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div id="editModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+<div class="bg-white rounded-lg p-5 w-full max-w-md relative">
+    <h2 class="text-lg font-semibold mb-4">Edit Student</h2>
+
+    <form method="POST" action="{{ url_for('admin.edit_student') }}">
+        <input type="hidden" name="student_id" id="editStudentId">
+
+        <label class="block mb-2">Full Name</label>
+        <input type="text" name="fullname" id="editFullname"
+       class="w-full border p-2 rounded mb-3"
+       required
+       oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')">
+
+        <label class="block mb-2">Gender</label>
+        <select name="gender" id="editGender"
+                class="w-full border p-2 rounded mb-3">
+            <option>Male</option>
+            <option>Female</option>
+        </select>
+
+        <label class="block mb-2">Email</label>
+        <input type="email" name="email" id="editEmail"
+               class="w-full border p-2 rounded mb-4" required>
+
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeEditModal()"
+                class="px-4 py-2 border rounded">
+                Cancel
+            </button>
+            <button type="submit"
+                class="px-4 py-2 bg-[#166D3B] text-white rounded">
+                Save
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div id="deleteModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+<div class="bg-white rounded-lg p-5 w-full max-w-sm text-center">
+    <h2 class="text-lg font-semibold mb-4">
+        Are you sure you want to delete this student?
+    </h2>
+
+    <form method="POST" action="{{ url_for('admin.delete_student') }}">
+        <input type="hidden" name="student_id" id="deleteStudentId">
+
+        <div class="flex justify-center gap-4">
+            <button type="button" onclick="closeDeleteModal()"
+                class="px-4 py-2 border rounded">
+                No
+            </button>
+            <button type="submit"
+                class="px-4 py-2 bg-red-600 text-white rounded">
+                Yes
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+    <div id="addStudentPopup" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-[#f6ebcd] p-6 rounded-lg shadow-lg w-[450px] relative">
+            <h2 class="text-2xl font-bold mb-4 text-center">Add Participant</h2>
+            <form action="/admin/addParticipant" method="POST">
+            <div class="mb-4">
+                <label class="block text-black">Fullname</label>
+                <input type="text" name="fullname" id="editFullname"
+                    class="w-full bg-white p-2 border border-black rounded"
+                    required
+                    oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <div>
+                    <label class="block text-black">Examination ID</label>
+                    <input type="text" name="exam_id" required class="w-full bg-white p-2 border border-black rounded">
+                </div>
+                <div>
+                    <label for="gender" class="block text-black">Gender</label>
+                    <select id="gender" name="gender" class="bg-white block w-full p-2 border border-black rounded" required>
+                        <option value="" selected disabled></option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <div>
+                    <label class="block text-black">Email Address</label>
+                    <input type="email" name="email" required class="w-full bg-white p-2 border border-black rounded">
+                </div>
+                <div>
+                    <label class="block text-black">School Year</label>
+                    <input type="text" name="school_year" required class="w-full bg-white p-2 border border-black rounded"
+                     oninput="this.value = this.value.replace(/[^0-9-]/g, '')">
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button type="button" onclick="closeAddStudentPopup()"
+                    class="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-700">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="bg-[#166D3B] text-white py-2 px-6 rounded-lg hover:bg-green-700">
+                    Add
+                </button>
+            </div>
+        </form>    
+        </div>
+    </div>
+
+{% if manual_success %}
+<div id="popupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white w-[90%] max-w-md rounded-xl shadow-xl p-6 text-center">
+        <h2 class="text-green-600 text-xl font-bold mb-3">Success</h2>
+        <p class="text-gray-700">{{ manual_message }}</p>
+        <button onclick="closePopup()" class="mt-5 bg-[#166D3B] text-white px-5 py-2 rounded-md hover:bg-green-700">
+            OK
+        </button>
+    </div>
+</div>
+{% elif manual_error %}
+<div id="popupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white w-[90%] max-w-md rounded-xl shadow-xl p-6 text-center">
+        <h2 class="text-red-600 text-xl font-bold mb-3">Error</h2>
+        <p class="text-gray-700">{{ manual_error }}</p>
+        <button onclick="closePopup()" class="mt-5 bg-[#166D3B] text-white px-5 py-2 rounded-md hover:bg-green-700">
+            OK
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<script>
+const overlay = document.getElementById('searchOverlay');
+const closeBtn = document.getElementById('closeSearchBtn');
+
+closeBtn.addEventListener('click', () => {
+    overlay.style.display = 'none';
+});
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+// CLOSE POPUP MODAL (ERROR / SUCCESS)
+function closePopup() {
+    closeModal('popupModal');
+
+    // Clean URL query params like ?error or ?success
+    const url = new URL(window.location);
+    url.searchParams.delete('error');
+    url.searchParams.delete('success');
+    url.searchParams.delete('message');
+    url.searchParams.delete('manual_success');
+    url.searchParams.delete('manual_error');
+    window.history.replaceState({}, document.title, url);
+}
+
+// OPEN / CLOSE ADD STUDENT
+function openAddStudentPopup() {
+    document.getElementById("addStudentPopup").classList.remove("hidden");
+}
+function closeAddStudentPopup() {
+    closeModal("addStudentPopup");
+}
+
+// OPEN / CLOSE EDIT MODAL
+function openEditModal(id, fullname, gender, email) {
+    document.getElementById("editStudentId").value = id;
+    document.getElementById("editFullname").value = fullname;
+    document.getElementById("editGender").value = gender;
+    document.getElementById("editEmail").value = email;
+    document.getElementById("editModal").classList.remove("hidden");
+}
+function closeEditModal() {
+    closeModal("editModal");
+}
+
+// OPEN / CLOSE DELETE MODAL
+function openDeleteModal(id) {
+    document.getElementById("deleteStudentId").value = id;
+    document.getElementById("deleteModal").classList.remove("hidden");
+}
+function closeDeleteModal() {
+    closeModal("deleteModal");
+}
+
+// CLOSE WHEN CLICKING OUTSIDE
+document.querySelectorAll('.fixed.inset-0').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+        // Only close if clicked outside the inner modal content
+        if (e.target === overlay) {
+            overlay.classList.add("hidden");
+        }
+    });
+});
+</script>
+
+</body>
+</html>

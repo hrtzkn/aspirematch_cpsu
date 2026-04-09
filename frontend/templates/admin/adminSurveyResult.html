@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESPONDENTS RESULT</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    @media print {
+        .print\:hidden {
+            display: none !important;
+        }
+    }
+
+    
+
+    @page ai-page {
+        size: Letter;
+        font-size: 15px;
+        margin-top: 2in;
+        margin-bottom: 0.5in;
+        margin-left: 1in;
+        margin-right: 1in;
+    }
+
+    .ai-page {
+        page: ai-page;
+    }
+
+    .ai-content {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .ai-subtitle {
+        font-size: 15px;
+        font-weight: bold;
+        margin-top: 16px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+
+    .ai-content ul {
+        list-style-type: disc;
+        padding-left: 22px;
+        margin-top: 6px;
+        margin-bottom: 10px;
+    }
+
+    .ai-content li {
+        display: list-item;
+        margin-bottom: 6px;
+    }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+    <!-- MAIN CONTENT -->
+    <div class="flex flex-1">
+        <main class="ml-0 lg:ml-56 mr-0 lg:mr-2 flex-1 bg-[#f6ebcd] p-1 lg:p-3 mb-0 lg:mb-16 mt-32 lg:mt-16 h-fit">
+        <div class=" p-3">
+            <div class="flex justify-between items-center">
+                <button onclick="window.history.back();" 
+                        class=" px-4 py-2 bg-[#EEEDED] text-black rounded hover:bg-gray-700 hover:text-white border border-[#166D3B]">
+                    ← Back
+                </button>
+                <a href="{{ url_for('admin.download_result', exam_id=student_results.exam_id) }}"
+                   class=" px-6 py-2 bg-[#166D3B] text-white rounded hover:bg-green-700">
+                    Download (.pdf)
+                </a>
+            </div>
+            <div class="print-container bg-white mt-4 shadow-lg rounded-md border border-[#166D3B] p-4 lg:p-12 h-fit">
+                <table style="width: 100%;" class="mt-4">
+                    <tr>
+                        <td style="width: 36%;" >
+                            <div class="flex flex-wrap items-center gap-2 pl-8 lg:pl-16 ">
+                                <img src="{{ url_for('static', filename='images/cpsulogo.png') }}" class="h-4 lg:h-14">
+                                <img src="{{ url_for('static', filename='images/bagong-pilipinas-logo.png') }}" class="h-6 lg:h-16">
+                                <img src="{{ url_for('static', filename='images/logo.png') }}" class="h-4 lg:h-14">
+                            </div>
+                        </td>
+                    
+                        <td class="text-left px-4 lg:px-6 border-l-2 border-black leading-snug">
+                            <div class="text-black text-[6px] lg:text-sm">
+                                Republic of the Philippines
+                            </div>
+
+                            <div class="text-green-600 font-bold uppercase
+                                        text-[7px] lg:text-base">
+                                Central Philippines State University
+                            </div>
+
+                            
+                            <div class="text-green-600 font-bold uppercase text-[7px] lg:text-base">
+                                {{ student_campus }}
+                            </div>
+                            <div class="text-black text-[5px] lg:text-xs">
+                                {{ campus_info.get(student_campus, 'Address not available') }}
+                            </div>
+                        </td>
+                    </tr>
+                  </table>
+                  
+                <div class="text-center mb-1 lg:mb-4 font-bold uppercase
+                            text-[5px] lg:text-base text-black">
+                    Students’ Admission and Facilitative Enhancement (S.A.F.E.) Center
+                </div>
+
+                <hr class="border border-black w-75 lg:w-full ml-4 lg:ml-2 mb-1 lg:mb-4">
+
+<div class="ml-8 mr-8 mt-3">
+
+    <h1 class="text-[10px] lg:text-2xl font-bold text-center mb-3">
+        Career Interest Survey Result
+    </h1>
+
+    <!-- INFO + PHOTO WRAPPER -->
+    <div class="flex justify-between items-start gap-6">
+
+        <!-- LEFT: Student Info -->
+        <div>
+            <h2 class="text-[8px] lg:text-lg">
+                <strong>Exam ID:</strong> {{ student_results.exam_id }}
+            </h2>
+            <h2 class="text-[8px] lg:text-lg">
+                <strong>Name:</strong> {{ student_results.fullname }}
+            </h2>
+            <h2 class="text-[8px] lg:text-lg">
+                <strong>SY:</strong> {{ year }}
+            </h2>
+
+            <div class="mt-1 lg:mt-3">
+                <p class="text-[8px] lg:text-lg">
+                    <strong>Preferred Program:</strong>
+                </p>
+                <p class="text-[8px] lg:text-lg">
+                    {{ student_results.preferred_program }}</p>
+            </div>
+        </div>
+
+        <!-- RIGHT: PHOTO BOX -->
+        <div class="border border-black p-1 text-center w-30 h-30 flex items-center justify-center print:hidden">
+
+            {% if student_results.photo %}
+                <img
+                    src="{{ url_for('static', filename='uploads/students/' ~ student_results.photo) }}"
+                    class="w-27.5 h-27.5 object-cover"
+                >
+            {% else %}
+                <img
+                    src="{{ url_for('static', filename='images/1x1.jpg') }}"
+                    class="w-27.5 h-27.5 object-cover"
+                >
+            {% endif %}
+
+        </div>
+
+    </div>
+</div>
+
+
+                <div class="section mb-2 ml-8 mr-8 mt-1 lg:mt-3 text-justify">
+                    <h2 class=" font-bold text-[8px] lg:text-lg">Most Chosen Letters</h2>
+                    <ul class="list-disc list-inside text-[8px] lg:text-lg">
+                        {% for letter in top_letters %}
+                            <li><strong>{{ letter }}:</strong> {{ letter_descriptions.get(letter, "No description available") }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="section ml-8 mr-8">
+                    {% if match_status == "Match" %}
+                        <p class="text-green-700 font-semibold text-[8px] lg:text-lg">✔ The preferred program and most chosen letter is MATCH</p>
+                    {% elif match_status == "Not Match" %}
+                        <p class="text-red-700 font-semibold text-[8px] lg:text-lg">✘ The preferred program and most chosen letter is NOT MATCH</p>
+                    {% elif match_status == "Not Yet Answer" %}
+                        <p class="text-gray-600 font-semibold text-[8px] lg:text-lg">⚠ The student has not yet answered the survey</p>
+                    {% endif %}
+                </div>
+
+{% if predicted_programs %}
+<div class="ml-8 mr-8 mt-4">
+    <h4 class="text-[#166D3B] font-semibold text-sm lg:text-lg mb-2">
+        🎓 Recommended Programs Based on Top Letters ({{ top_letters | join(", ") }})
+    </h4>
+
+    <ul class="list-disc ml-6 text-[8px] lg:text-sm text-gray-700">
+        {% for program_name, category_letter in predicted_programs %}
+            <li>
+                <span class="font-medium">{{ program_name }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+                <div class="section border border-gray-400 p-4 lg:p-6 mt-7 lg:mt-10 rounded
+                            h-90 overflow-auto ml-8 mr-8">
+                </div>
+
+                <div class="mt-4 lg:mt-12 ml-8 mb-4 lg:mb-8">
+    
+                    <div class="inline-block text-center">
+                        <h2 class="text-[6px] lg:text-lg font-bold mb-1">
+                            <span class="border-b border-black pb-1 inline-block">
+                                {{ guidance_counselor }}
+                            </span>
+                        </h2>
+                        
+                        <h3 class="text-[8px] lg:text-sm">
+                            Guidance Counselor
+                        </h3>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="print-container ai-page bg-white shadow-lg rounded-md border border-[#166D3B] h-fit mt-4 p-6 mb-16">
+                <div class="ai-content m-10 rounded text-justify leading-relaxed text-gray-800">
+                    {{ student_results.ai_explanation | safe
+                    if student_results.ai_explanation
+                    else 'Student didnt need "AI Explanation" to view their AI career guidance.' }}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

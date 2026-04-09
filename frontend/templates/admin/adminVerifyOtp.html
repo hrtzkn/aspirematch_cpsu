@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN VERIFY</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+<header class="fixed top-0 left-0 right-0 bg-[#166D3B] text-[#f6ebcd] z-50">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-0 lg:gap-4">
+        <img src="/static/images/aspire.png" alt="AspireMatch Logo"
+             class="h-14 lg:h-20 w-auto">
+
+        <h1 class="text-center text-sm lg:text-2xl font-semibold tracking-wide leading-tight">
+            ASPIREMATCH:
+            <span class="font-light block lg:inline">
+                A Career Interest Recommendation Application
+            </span>
+        </h1>
+    </div>
+</header>
+
+<!-- PAGE CONTENT -->
+<main class="flex-grow flex items-center justify-center px-4 pt-32 lg:pt-28">
+
+    <!-- VERIFY CARD -->
+    <div class="bg-white rounded-md shadow-lg w-full max-w-md p-6 lg:p-8">
+
+        <p class="text-sm font-bold mb-2">
+            Enter the verification code sent to your email.   <!-- <br> You can view it in "Spam" message -->
+        </p>
+
+        {% if error %}
+        <p id="otpError"
+           class="text-red-600 text-center mb-4"
+           data-remaining="{{ remaining if remaining }}">
+            {% if remaining %}
+                Please wait <span id="countdown">{{ remaining }}</span>s before resending OTP.
+            {% else %}
+                {{ error }}
+            {% endif %}
+        </p>
+        {% endif %}
+
+        {% if success %}
+        <p class="text-green-600 text-center mb-4">{{ success }}</p>
+        {% endif %}
+
+        <form method="POST" class="space-y-5">
+
+            <input type="text"
+                   name="otp"
+                   maxlength="6"
+                   inputmode="numeric"
+                   class="w-full p-1 border border-black rounded-md text-center tracking-widest text-lg
+                          focus:outline-none focus:ring-2 focus:ring-[#166D3B]"
+                   placeholder="Enter OTP">
+
+            <button type="submit"
+                    name="action"
+                    value="verify"
+                    class="w-full py-2 bg-[#166D3B] text-white rounded-md
+                           hover:bg-green-700 transition">
+                Verify OTP
+            </button>
+
+            <!-- ACTION BUTTONS -->
+            <div class="flex gap-2 justify-between items-center">
+                <button type="button"
+                        onclick="window.history.back();"
+                        class="w-fit sm:w-auto px-6 py-2 bg-[#EEEDED] text-black rounded
+                               border border-[#166D3B] hover:bg-gray-700 hover:text-white transition">
+                    Back
+                </button>
+
+                <button type="submit"
+                        name="action"
+                        value="resend"
+                        class="text-sm text-[#166D3B] hover:underline">
+                    Resend OTP
+                </button>
+            </div>
+
+        </form>
+    </div>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const errorEl = document.getElementById("otpError");
+    const countdownEl = document.getElementById("countdown");
+
+    if (!errorEl || !countdownEl) return;
+
+    let remaining = parseInt(errorEl.dataset.remaining);
+    if (isNaN(remaining)) return;
+
+    const interval = setInterval(() => {
+        remaining--;
+
+        if (remaining <= 0) {
+            clearInterval(interval);
+            errorEl.innerHTML = "You can now resend the OTP.";
+        } else {
+            countdownEl.innerText = remaining;
+        }
+    }, 1000);
+});
+</script>
+
+</body>
+</html>

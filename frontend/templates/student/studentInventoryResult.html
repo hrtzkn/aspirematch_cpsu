@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Inventory Result</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+    {% include 'components/studentHeader.html' %}
+
+    {% include 'components/studentSidebar.html' %}
+    
+<div class="flex flex-1">
+        <main
+            class="flex-1 bg-[#f6ebcd]
+                px-3 sm:px-4 md:px-6 lg:px-8
+                pt-4 lg:pt-[110px]
+                pb-16
+                min-h-screen
+                lg:ml-72">
+            <div class="flex justify-between lg:justify-between mb-4">                
+                <a href="{{ url_for('student.studentInventory') }}"
+                class="px-6 py-2 bg-[#166D3B] text-white text-[10px] lg:text-lg rounded hover:bg-green-700 text-center w-fit lg:w-auto">
+                    Update Information
+                </a>
+                
+                <a href="{{ url_for('student.download_inventory_pdf', student_id=session['student_id']) }}"
+                class="px-6 py-2 bg-[#166D3B] text-white text-[10px] lg:text-lg rounded hover:bg-green-700 text-center w-fit lg:w-auto">
+                    Download (.pdf)
+                </a>
+            </div>
+        <div class="print-container shadow-lg bg-white p-4 lg:p-[40px]
+                        rounded-2xl border border-[#166D3B]
+                        w-full lg:w-[816px]
+                        mx-auto overflow-x-auto">
+            <!-- HEADER SECTION -->
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 18%;">
+                        <div class="flex flex-wrap  pl-3 ">
+                            <img src="{{ url_for('static', filename='images/cpsulogo.png') }}" class="h-9 lg:h-[90px]">
+                        </div>
+                    </td>
+                
+                    <td class="text-left">
+                        <div class="text-[#16A34A] font-bold uppercase text-[7px] lg:text-lg">
+                        Central Philippines State University
+                        </div>
+                        <div class="text-[#16A34A] font-bold uppercase text-[8px] lg:text-lg">
+                        {{ info.campus }}
+                        </div>
+                        <div class="text-black text-[5px] lg:text-[12px]">
+                        {{ info.campus_address }}
+                        </div>
+                        <div class="text-black font-bold uppercase text-[7px] lg:text-[16px]">
+                        Guidance and Counseling Unit
+                        </div>
+                    </td>
+
+                    <!-- RIGHT SIDE: Student Photo -->
+                    <td class="text-start w-[18%]">
+                        {% if info.photo %}
+                            <div class="border border-black p-1 text-center print:hidden">
+            <img src="{{ url_for('static', filename='uploads/students/' ~ info.photo) }}"
+                 class="w-[110px] h-[110px] object-cover mx-auto">
+                            </div>
+                        {% else %}
+                            <div class="border border-black w-[70px] lg:w-[120px] h-[70px] lg:h-[120px] p-2 flex flex-col justify-between items-center print:hidden">
+
+            <img src="{{ url_for('static', filename='images/1x1.jpg') }}"
+                 class="w-[50px] lg:w-[90px] h-[50px] lg:h-[90px] opacity-50">
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+
+            <div class="text-center mb-1 lg:mb-4 mt-2 lg:mt-6  font-bold
+                        text-[9px] lg:text-xl text-black">
+                Individual Inventory Form
+            </div>
+            <div class="text-center mb-1 lg:mb-1 mt-2 lg:mt-6 uppercase
+                        text-[10px] lg:text-lg text-black">
+                DISCLAIMER
+            </div>
+
+            <p class="text-[5px] lg:text-[12px] ml-2 lg:ml-4 mr-2 lg:mr-4 indent-4 lg:indent-8 text-justify">The information provided are true and accurate to the best of your knowledge. 
+                You also agree that the information provided herewith, was prepared on your own free will, 
+                freely and voluntarily without any inducement, assurance or guarantee being made. 
+                You hereby attest to the completeness and accuracy of all the information you have given.</p>
+
+            <p class="text-[5px] lg:text-[12px] ml-2 lg:ml-4 mr-2 lg:mr-4 indent-4 lg:indent-8 text-justify">Further, you are also allowing the University to use and release the information for legitimate purposes. 
+                Likewise, you permit the University to release information only to authorized personnel for the above stated 
+                purpose in accordance with the Data Privacy Policy of the University. You are aware that any act of dishonesty 
+                or falsification will lead to forfeiture of your application or dismissal from this University. 
+                The institution may also take further legal steps against fraudulent actions if the situation demands.</p>
+
+         {% if info %}
+            <div class="p-2 lg:p-4 mb-6">
+                <div class="grid grid-cols-1 border border-black border-b-0">
+                    <div class="p-1 lg:p-2 text-[8px] lg:text-xs font-bold">
+                        COURSE: <span class="font-normal">{{ info.course_name }}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 border border-black border-b-0">
+                    <p class="p-1 lg:p-2 text-[4px] lg:text-[10px]">Please fill up the following information below. 
+                        Rest assured that all information will be treated with confidentiality. 
+                        Thank you for your cooperation</p>
+                </div>
+                <div class="bg-black text-[8px] lg:text-sm text-white font-bold px-2 py-1">PERSONAL INFORMATION:</div>
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="col-span-2 border-r border-black p-1 lg:p-2 font-bold">
+                        NAME: <span class="font-normal">{{ info.fullname|upper }}</span>
+                    </div>
+                    <div class="p-1 lg:p-2 font-bold">
+                        NICKNAME: <span class="font-normal">{{ info.nickname }}</span>
+                    </div>
+                </div>
+            
+                <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold">
+                        PRESENT ADDRESS: <span class="font-normal">{{ info.present_address }}</span>
+                    </div>
+                </div>
+            
+                <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold">
+                        PROVINCIAL ADDRESS: <span class="font-normal">{{ info.provincial_address }}</span>
+                    </div>
+                </div>
+            
+                <div class="grid grid-cols-4 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">DATE OF BIRTH: <span class="font-normal ml-8">{{ info.date_of_birth }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">PLACE OF BIRTH: <span class="font-normal">{{ info.place_of_birth }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">BIRTH ORDER: <span class="font-normal">{{ info.birth_order }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold">NUMBER OF SIBLINGS: <span class="font-normal">{{ info.siblings_count }}</span></div>
+                </div>
+            
+                <div class="grid grid-cols-5 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">AGE: <span class="font-normal">{{ info.age }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">GENDER: <span class="font-normal">{{ info.gender}}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">CIVIL STATUS: <span class="font-normal">{{ info.civil_status }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">RELIGION: <span class="font-normal ml-2">{{ info.religion }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold">NATIONALITY: <span class="font-normal">{{ info.nationality }}</span></div>
+                </div>
+            
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">HOME PHONE NO.: <span class="font-normal">{{ info.home_phone }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">MOBILE NO.: <span class="font-normal ml-4">{{ info.mobile_no }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold">EMAIL ADD: <span class="font-normal">{{ info.email}}</span></div>
+                </div>
+            
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">WEIGHT: <span class="font-normal">{{ info.weight }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">HEIGHT: <span class="font-normal">{{ info.height }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold">BLOOD TYPE: <span class="font-normal">{{ info.blood_type }}</span></div>
+                </div>
+            
+                <div class="grid grid-cols-2 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">HOBBIES / INTEREST: <span class="font-normal">{{ info.hobbies }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold ">TALENTS: <span class="font-normal">{{ info.talents }}</span></div>
+                </div>
+            
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="col-span-2 p-1 lg:p-2 font-bold border-r border-black">IN CASE OF EMERGENCY, PLEASE NOTIFY: <span class="font-normal">{{ info.emergency_name }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold">RELATIONSHIP: <span class="font-normal">{{ info.emergency_relationship }}</span></div>
+                </div>
+            
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="col-span-2 p-1 lg:p-2 font-bold border-r border-black">ADDRESS: <span class="font-normal">{{ info.emergency_address }}</span></div>
+                    <div class="p-1 lg:p-2 font-bold">CONTACT NO.: <span class="font-normal">{{ info.emergency_contact }}</span></div>
+                </div>
+
+                <div class="bg-black text-[8px] lg:text-sm text-white font-bold px-2 py-1">Family Background:</div>
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black">FATHER:</div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black"></div>
+                    <div class="p-1 lg:p-2 font-bold">MOTHER:</div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black"> <span class="font-normal">{{ info.father_name}}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black text-center">NAME:</div>
+                    <div class="p-1 lg:p-2 font-bold"> <span class="font-normal"> {{ info.mother_name}}</span></div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black"> <span class="font-normal">{{ info.father_age}}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black text-center">AGE:</div>
+                    <div class="p-1 lg:p-2 font-bold"> <span class="font-normal"> {{ info.mother_age}}</span></div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2  border-r border-black"> <span class="font-normal"> {{ info.father_education}}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black text-center">HIGHEST EDUCATIONAL ATTAINMENT:</div>
+                    <div class="p-1 lg:p-2 font-bold"> <span class="font-normal">{{ info.mother_education}}</span></div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black"> <span class="font-normal">{{ info.father_occupation}}</span>:</div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black text-center">OCCUPATION:</div>
+                    <div class="p-1 lg:p-2 font-bold"> <span class="font-normal"> {{ info.mother_occupation}}</span></div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black"> <span class="font-normal">{{ info.father_income}}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black text-center">AVERAGE INCOME PER MONTH:</div>
+                    <div class="p-1 lg:p-2 font-bold"> <span class="font-normal">{{ info.mother_income}}</span></div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[8px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 font-bold border-r border-black"> <span class="font-normal">{{ info.father_contact}}</span></div>
+                    <div class="p-1 lg:p-2 font-bold border-r border-black text-center">CONTACT NUMBER/S:</div>
+                    <div class="p-1 lg:p-2 font-bold"> <span class="font-normal">{{ info.mother_contact}}</span></div>
+                </div>
+                
+                <div class="bg-black text-[8px] lg:text-sm text-white font-bold px-2 py-1">Status of Parents</div>
+                <div class="grid grid-cols-5 text-[7px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 border-r border-black">{% if info.parent_status == "married_living_together" %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Married & <br> Living Together</div>
+                    <div class="p-1 lg:p-2 border-r border-black">{% if info.parent_status == "legally_separated" %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Legally <br> Separated</div>
+                    <div class="p-1 lg:p-2 border-r border-black">{% if info.parent_status == "living_not_married" %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Living in <br> (Not Married)</div>
+                    <div class="p-1 lg:p-2 border-r border-black">{% if info.parent_status == "mother_widow" %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Mother (Widow)</div>
+                    <div class="p-1 lg:p-2">{% if info.parent_status == "father_widower" %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Father (Widower)</div>
+                </div>
+
+                <div class="grid grid-cols-3 text-[7px] lg:text-sm border border-black border-t-0">
+                    <div class="p-1 lg:p-2 border-r border-black">{% if info.parent_status == "separated" %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Separated</div>
+                    <div class="p-1 lg:p-2 border-r border-black">{% if info.father_another_family %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Father is with another family</div>
+                    <div class="p-1 lg:p-2">{% if info.mother_another_family %}☑{% else %}&nbsp;&nbsp;☐{% endif %} Mother is with another family</div>
+                </div>
+    {% endif %}
+            </div>
+        </div>
+        <br>
+        <div class="print-container shadow-lg bg-white p-4 lg:p-6
+                        rounded-2xl border border-[#166D3B]
+                        w-full lg:w-[816px]
+                        mx-auto overflow-x-auto">
+            <div class=" p-4 mb-6 text-[14px]">
+                <div class="bg-black text-white font-bold px-2 py-1 text-[8px] lg:text-sm">Academic Information</div>
+                    <div class="grid grid-cols-4 font-bold border border-black border-t-0 text-[6px] lg:text-sm text-center">
+                        <div class="p-1 lg:p-2 border border-black">LEVEL</div>
+                        <div class="p-1 lg:p-2 border border-black">NAME OF SCHOOL</div>
+                        <div class="p-1 lg:p-2 border border-black">YEAR GRADUATED</div>
+                        <div class="p-1 lg:p-2 border border-black">AWARDS RECEIVED</div>
+                    </div>
+    
+                    <div class="grid grid-cols-4 font-bold border border-black border-t-0 text-[8px] lg:text-sm text-center">
+                        <div class="p-1 lg:p-2 border border-black font-semibold">ELEMENTARY:</div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.elementary_school_name }}</span></div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.elementary_year_graduated }}</span></div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.elementary_awards }}</span></div>
+                    </div>
+    
+                    <div class="grid grid-cols-4 font-bold border border-black border-t-0 text-[8px] lg:text-sm text-center">
+                        <div class="p-1 lg:p-2 border  border-black font-semibold">JUNIOR HIGH SCHOOL:</div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.junior_high_school_name }}</span></div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.junior_high_year_graduated }}</span></div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.junior_high_awards }}</span></div>
+                    </div>
+    
+                    <div class="grid grid-cols-4 font-bold border border-black border-t-0 text-[8px] lg:text-sm text-center">
+                        <div class="p-1 lg:p-2 border text-[8px] lg:text-sm border-black font-semibold">
+                            SENIOR HIGH SCHOOL:
+                            <div>
+                                <div class="flex gap-1 lg:p-2 items-center">
+                                    <label for="senior_track" class="">TRACK:</label>
+                                    <div class="font-bold"><span class="font-normal border-b border-black">{{ info.senior_high_track }}</span></div>
+                                </div>
+                                <div class="flex gap-1 lg:p-2 items-center mt-1">
+                                    <label for="senior_strand" class="">STRAND:</label>
+                                    <div class=" font-bold"><span class="font-normal border-b border-black">{{ info.senior_high_strand }}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.senior_high_school_name }}</span></div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.senior_high_year_graduated }}</span></div>
+                        <div class="p-1 lg:p-2 font-bold border border-black"><span class="font-normal">{{ info.senior_high_awards }}</span></div>
+                    </div>
+
+                
+                <div class=" px-2 py-1 text-[8px] lg:text-sm"></div>
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black">
+                        <div class="p-1 lg:p-2 font-bold">
+                            Subjects interested to: <span class="font-normal">{{ info.subject_interested }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                        <div class="p-1 lg:p-2 font-bold">
+                            Organization Membership: <span class="font-normal">{{ info.org_membership }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                        <div class="p-1 lg:p-2 font-bold">
+                            How is your studies financed? <span class="font-normal">{{ info.study_finance }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0 gap-4">
+                        <div class="p-1 lg:p-2 font-bold">
+                            Is your present course / program your personal choice? 
+                           <span class="ml-4"> {% if info.course_personal_choice %} ☑ YES ☐ NO
+                            {% else %} ☐ YES ☑ NO {% endif %} </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                        <div class="p-1 lg:p-2 font-bold">
+                            If NO,
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                        <div class="p-1 lg:p-2 font-bold">
+                            A. Who influenced you? - <span class="font-normal">{{ info.influenced_by }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                        <div class="p-1 lg:p-2 font-bold">
+                            B.  How do you feel about the course not being your first choice? - <span class="font-normal">{{ info.feeling_about_course }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 text-[8px] lg:text-sm border border-black border-t-0">
+                        <div class="p-1 lg:p-2 font-bold">
+                            C. What is your personal choice? - <span class="font-normal">{{ info.personal_choice }}</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-black text-white text-[8px] lg:text-sm font-bold px-2 py-1">Why did you choose to enroll in CPSU?</div>
+                        <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[12px]">
+                            <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'Quality education' in selected_reasons %}☑{% else %}☐{% endif %} Quality education</div>
+                            <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'Free tuition fee' in selected_reasons %}☑{% else %}☐{% endif %} Free tuition fee</div>
+                            <div class="pl-1 lg:pl-2 font-bold">{% if 'Competitive faculty members' in selected_reasons %}☑{% else %}☐{% endif %} Competitive faculty members</div>
+                        </div>
+
+                        <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[12px]">
+                            <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'Good facilities' in selected_reasons %}☑{% else %}☐{% endif %} Good facilities</div>
+                            <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'Proximity and accessibility' in selected_reasons %}☑{% else %}☐{% endif %} Proximity and accessibility</div>
+                            <div class="pl-1 lg:pl-2 font-bold text-[4px] lg:text-[10px]">{% if 'Performance in the licensure examination' in selected_reasons %}☑{% else %}☐{% endif %} Performance in the licensure examination</div>
+                        </div>
+
+                        <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[12px]">
+                            <div class="pl-1 lg:pl-2 font-bold border-r border-black text-[5px] lg:text-[11px]">{% if 'Recommended by friends' in selected_reasons %}☑{% else %}☐{% endif %} Recommended by friends, relatives, etc.</div>
+                            <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'Good reputation' in selected_reasons %}☑{% else %}☐{% endif %} Good reputation</div>
+                            <div class="pl-1 lg:pl-2 font-bold">
+                                {% if other_reason %}☑{% else %}☐{% endif %} Others, please specify: <span class="font-normal">{{ other_reason }}</span>
+                            </div>
+                        </div>
+
+                <div class="bg-black text-white text-[8px] lg:text-sm font-bold px-2 py-1">What other school do you consider?</div>
+                    <div class="grid grid-cols-6 border border-black border-t-0 text-[6px] lg:text-[12px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'SUNN' in other_schools_selected %}☑{% else %}☐{% endif %} SUNN</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'CHMSU' in other_schools_selected %}☑{% else %}☐{% endif %} CHMSU</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'PNU-V' in other_schools_selected %}☑{% else %}☐{% endif %} PNU-V</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'TAÑON' in other_schools_selected %}☑{% else %}☐{% endif %} TAÑON</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'CSTR' in other_schools_selected %}☑{% else %}☐{% endif %} CSTR</div>
+                        <div class="pl-1 lg:pl-2 font-bold">{% if 'UNO R' in other_schools_selected %}☑{% else %}☐{% endif %} UNO R</div>
+                    </div>
+
+                    <div class="grid grid-cols-4 border border-black border-t-0 text-[6px] lg:text-[12px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'NORSU' in other_schools_selected %}☑{% else %}☐{% endif %} NORSU</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'TUP-V' in other_schools_selected %}☑{% else %}☐{% endif %} TUP-V</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if 'CSR' in other_schools_selected %}☑{% else %}☐{% endif %} CSR</div>
+                        <div class="pl-1 lg:pl-2 font-bold ">{% if other_school %}☑{% else %}☐{% endif %} Others, please specify: <span class="font-normal"></span>{{ other_school }}</div>
+                    </div>
+
+                <div class="bg-black text-white text-[8px] lg:text-sm font-bold px-2 py-1">BEHAVIOR INFORMATION:</div>
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[14px] text-center">
+                        <div class="pl-1 font-bold text-center border-r border-black">Check if you ever experience the following concerns:</div>
+                        <div class="pl-1 font-bold text-center border-r border-black">When did it happen?</div>
+                        <div class="pl-1 font-bold text-center">Does it still bothering you?</div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.bullying %}☑{% else %}☐{% endif %} Bullying</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.bullying_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.bullying %}
+                                {% if info['bullying_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['bullying_bother'] is not none and not info['bullying_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.suicidal_thoughts %}☑{% else %}☐{% endif %} Suicidal thoughts</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"><span class="font-normal">{{ info.suicidal_thoughts_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.suicidal_thoughts %}
+                                {% if info['suicidal_thoughts_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['suicidal_thoughts_bother'] is not none and not info['suicidal_thoughts_bother'] %} ☐ YES  ☑ NO
+                                {% else %} ☐ YES  ☐ NO  {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.suicidal_attempts %}☑{% else %}☐{% endif %} Suicidal attempt</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.suicidal_attempts_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.suicidal_attempts %}
+                                {% if info['suicidal_attempts_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['suicidal_attempts_bother'] is not none and not info['suicidal_attempts_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.panic_attacks %}☑{% else %}☐{% endif %} Panic attacks</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.panic_attacks_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.panic_attacks %}
+                                {% if info['panic_attacks_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['panic_attacks_bother'] is not none and not info['panic_attacks_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.anxiety %}☑{% else %}☐{% endif %} Anxiety</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"><span class="font-normal">{{ info.anxiety_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.anxiety %}
+                                {% if info['anxiety_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['anxiety_bother'] is not none and not info['anxiety_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.depression %}☑{% else %}☐{% endif %}  Depression</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.depression_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.depression %}
+                                {% if info['depression_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['depression_bother'] is not none and not info['depression_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.self_anger_issues %}☑{% else %}☐{% endif %} Self / Anger Management Issues</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.self_anger_issues_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.self_anger_issues %}
+                                {% if info['self_anger_issues_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['self_anger_issues_bother'] is not none and not info['self_anger_issues_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.recurring_negative_thoughts %}☑{% else %}☐{% endif %} Recurring negative thoughts</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.recurring_negative_thoughts_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.recurring_negative_thoughts %}
+                                {% if info['recurring_negative_thoughts_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['recurring_negative_thoughts_bother'] is not none and not info['recurring_negative_thoughts_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.low_self_esteem %}☑{% else %}☐{% endif %} Low self-esteem</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.low_self_esteem_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.low_self_esteem %}
+                                {% if info['low_self_esteem_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['low_self_esteem_bother'] is not none and not info['low_self_esteem_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.poor_study_habits %}☑{% else %}☐{% endif %} Poor study habits</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.poor_study_habits_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.poor_study_habits %}
+                                {% if info['poor_study_habits_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['poor_study_habits_bother'] is not none and not info['poor_study_habits_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.poor_in_decision_making %}☑{% else %}☐{% endif %} Poor in decision making</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.poor_in_decision_making_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.poor_in_decision_making %}
+                                {% if info['poor_in_decision_making_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['poor_in_decision_making_bother'] is not none and not info['poor_in_decision_making_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.impulsivity %}☑{% else %}☐{% endif %} Impulsivity</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.impulsivity_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.impulsivity %}
+                                {% if info['impulsivity_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['impulsivity_bother'] is not none and not info['impulsivity_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.poor_sleeping_habits %}☑{% else %}☐{% endif %} Poor sleeping habits</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.poor_sleeping_habits_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.poor_sleeping_habits %}
+                                {% if info['poor_sleeping_habits_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['poor_sleeping_habits_bother'] is not none and not info['poor_sleeping_habits_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.loss_of_appetite %}☑{% else %}☐{% endif %} Loss of appetite</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.loss_of_appetite_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.loss_of_appetite %}
+                                {% if info['loss_of_appetite_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['loss_of_appetite_bother'] is not none and not info['loss_of_appetite_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.over_eating %}☑{% else %}☐{% endif %} Over-eating</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.over_eating_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.over_eating %}
+                                {% if info['over_eating_bother'] %} ☑ YES  ☐ NO
+                                {% elif iinfo['over_eating_bother'] is not none and not info['over_eating_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.poor_hygiene %}☑{% else %}☐{% endif %} Poor hygiene</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.poor_hygiene_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.poor_hygiene %}
+                                {% if info['poor_hygiene_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['poor_hygiene_bother'] is not none and not info['poor_hygiene_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.withdrawal_isolation %}☑{% else %}☐{% endif %} Withdrawal / Isolation</div>
+                        <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.withdrawal_isolation_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.withdrawal_isolation %}
+                                {% if info['withdrawal_isolation_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['withdrawal_isolation_bother'] is not none and not info['withdrawal_isolation_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <br>
+        <div class="print-container shadow-lg bg-white p-4 lg:p-6 mb-8
+                        rounded-2xl border border-[#166D3B]
+                        w-full lg:w-[816px]
+                        mx-auto overflow-x-auto">
+            <div class=" p-4 mb-6 text-s">
+                <div class="grid grid-cols-3 border border-black  text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.family_problem %}☑{% else %}☐{% endif %} Family Problem</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.family_problem_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.family_problem %}
+                                {% if info['family_problem_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['family_problem_bother'] is not none and not info['family_problem_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.other_relationship_problem %}☑{% else %}☐{% endif %} Other Relationship Problem</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.other_relationship_problem_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.other_relationship_problem %}
+                                {% if info['other_relationship_problem_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['other_relationship_problem_bother'] is not none and not info['other_relationship_problem_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.alcohol_addiction %}☑{% else %}☐{% endif %} Alcohol Addiction</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.alcohol_addiction_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.alcohol_addiction %}
+                                {% if info['alcohol_addiction_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['alcohol_addiction_bother'] is not none and not info['alcohol_addiction_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.gambling_addiction %}☑{% else %}☐{% endif %} Gambling Addiction</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.gambling_addiction_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.gambling_addiction %}
+                                {% if info['gambling_addiction_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['gambling_addiction_bother'] is not none and not info['gambling_addiction_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.drug_addiction %}☑{% else %}☐{% endif %} Drug Addiction</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.drug_addiction_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.drug_addiction %}
+                                {% if info['drug_addiction_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['drug_addiction_bother'] is not none and not info['drug_addiction_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.computer_addiction %}☑{% else %}☐{% endif %} Computer Addiction</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.computer_addiction_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.computer_addiction %}
+                                {% if info['computer_addiction_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['computer_addiction_bother'] is not none and not info['computer_addiction_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.sexual_harassment %}☑{% else %}☐{% endif %} Sexual Harassment</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.sexual_harassment_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.sexual_harassment %}
+                                {% if info['sexual_harassment_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['sexual_harassment_bother'] is not none and not info['sexual_harassment_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.sexual_abuse %}☑{% else %}☐{% endif %} Sexual Abuse</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.sexual_abuse_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.sexual_abuse %}
+                                {% if info['sexual_abuse_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['sexual_abuse_bother'] is not none and not info['sexual_abuse_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.physical_abuse %}☑{% else %}☐{% endif %} Physical Abuse</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.physical_abuse_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.physical_abuse %}
+                                {% if info['physical_abuse_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['physical_abuse_bother'] is not none and not info['physical_abuse_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.verbal_abuse %}☑{% else %}☐{% endif %} Verbal Abuse</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.verbal_abuse_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.verbal_abuse %}
+                                {% if info['verbal_abuse_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['verbal_abuse_bother'] is not none and not info['verbal_abuse_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.pre_marital_sex %}☑{% else %}☐{% endif %} Pre Marital Sex</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.pre_marital_sex_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.pre_marital_sex %}
+                                {% if info['pre_marital_sex_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['pre_marital_sex_bother'] is not none and not info['pre_marital_sex_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.teenage_pregnancy %}☑{% else %}☐{% endif %} Teenage Pregnancy</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.teenage_pregnancy_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.teenage_pregnancy %}
+                                {% if info['teenage_pregnancy_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['teenage_pregnancy_bother'] is not none and not info['teenage_pregnancy_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.abortion %}☑{% else %}☐{% endif %} Abortion</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.abortion_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.abortion %}
+                                {% if info['abortion_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['abortion_bother'] is not none and not info['abortion_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+
+                <div class="grid grid-cols-3 border border-black border-t-0 text-[6px] lg:text-[13px]">
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black">{% if info.extra_marital_affairs %}☑{% else %}☐{% endif %} Extra Marital Affairs</div>
+                    <div class="pl-1 lg:pl-2 font-bold border-r border-black"> <span class="font-normal">{{ info.extra_marital_affairs_when or '' }}</span></div>
+                        <div class="pl-1 lg:pl-2 font-bold text-center">
+                            {% if info.extra_marital_affairs %}
+                                {% if info['extra_marital_affairs_bother'] %} ☑ YES  ☐ NO
+                                {% elif info['extra_marital_affairs_bother'] is not none and not info['extra_marital_affairs_bother'] %} ☐ YES  ☑ NO
+                                {% else %}  ☐ YES  ☐ NO {% endif %}
+                            {% else %} ☐ YES  ☐ NO {% endif %}
+                        </div>
+                </div>
+                <div class="bg-black text-white font-bold px-2 py-1 text-[8px] lg:text-[12px]">PREVIOUS PSYCOLOGICAL CONSULTATIONS</div>
+                    <div class="grid grid-cols-2 border border-black border-t-0">
+                        <div class="p-1 text-[6px] lg:text-[12px]">
+                            Have you consulted a PSYCHIATRIST before? 
+                        </div>
+                        <div class="p-1 text-[6px] lg:text-[12px]"><span class="ml-2"> {% if info.psychiatrist_before %} ☑ YES ☐ NO
+                            {% else %} ☐ YES ☑ NO {% endif %} </span></div>
+                        <div></div>
+                    </div>
+                    <div class="grid grid-cols-2 border border-black border-t-0">
+                        <div class="p-1 ml-2 text-[6px] lg:text-[12px]">
+                            If YES, for what reason? - <span class="font-normal ml-2">{{ info.psychiatrist_reason }}</span>
+                        </div>
+                        <div class="p-1 ml-2 text-[6px] lg:text-[12px] ">
+                           When? - <span class="font-normal">{{ info.psychiatrist_when }}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 border border-black border-t-0">
+                        <div class="p-1 text-[6px] lg:text-[12px]">
+                            Have you consulted a PSYCHOLOGIST  before? 
+                        </div>
+                        <div class="p-1 text-[6px] lg:text-[12px]"><span class="ml-2"> {% if info.psychologist_before %} ☑ YES ☐ NO
+                            {% else %} ☐ YES ☑ NO {% endif %} </span></div>
+                        <div></div>
+                    </div>
+                    <div class="grid grid-cols-2 border border-black border-t-0">
+                        <div class="p-1 ml-2 text-[6px] lg:text-[12px]">
+                            If YES, for what reason? - <span class="font-normal ml-2">{{ info.psychologist_reason }}</span>
+                        </div>
+                        <div class="p-1 ml-2 text-[6px] lg:text-[12px] ">
+                           When? - <span class="font-normal">{{ info.psychologist_when }}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 border border-black border-t-0">
+                        <div class="p-1 text-[6px] lg:text-[12px]">
+                            Have you consulted a COUNSELOR  before? 
+                        </div>
+                        <div class="p-1 text-[6px] lg:text-[12px]"><span class="ml-2"> {% if info.counselor_before %} ☑ YES ☐ NO
+                            {% else %} ☐ YES ☑ NO {% endif %} </span></div>
+                        <div></div>
+                    </div>
+                    <div class="grid grid-cols-2 border border-black border-t-0">
+                        <div class="p-1 ml-2 text-[6px] lg:text-[12px]">
+                            If YES, for what reason? - <span class="font-normal ml-2">{{ info.counselor_reason }}</span>
+                        </div>
+                        <div class="p-1 ml-2 text-[6px] lg:text-[12px] ">
+                           When? - <span class="font-normal">{{ info.counselor_when }}</span>
+                        </div>
+                    </div>
+                <div class="bg-black text-white font-bold px-2 py-1 text-[8px] lg:text-[12px]">PERSONAL DESCRIPTION <span class="font-normal">(Tell something about yourself)</span></div>
+                <div class="border border-black p-3 h-[100px] text-[8px] lg:text-[12px]">
+                    <span class="font-normal">
+                        {{ info.personal_description or 'No description provided.' }}
+                    </span>
+                </div>
+                <p class="mt-2 lg:mt-4 text-[8px] lg:text-sm text-center">DATA PRIVACY CONSENT</p>
+                <p class=" text-[8px] lg:text-[12px] indent-4 lg:indent-8 text-justify">By accepting this Data Privacy Statement, I (as “Data Subject”) grant my free, voluntary and unconditional consent to the collection and 
+                    processing of all Personal Data to the information database system of the Central Philippine State University-San Carlos by whatever means in 
+                    accordance with Republic Act (R.A.) 10173, otherwise known as the “Data Privacy Act of 2012” of the Republic of the Philippines, including its 
+                    Implementing Rules and Regulations (IRR) as well as all other guidelines and issuances by the National Privacy Commission (NPC). I also consent 
+                    to the following:</p>
+                <p class="ml-2 lg:ml-4 mt-1 lg:mt-2  text-[8px] lg:text-[12px] text-justify">1. 	The University may collect personal data during my application for admission purposes. <br>
+                    2.	My personal information can be accessed and used only by authorized personnel and officials connected to the University for legitimate purposes
+                    only. <br>
+                    3.	The University may share or disclose some of my personal information to others in its process to deliver necessary services for the stakeholders and 
+                    the institution, including but not limited to: <br>
+                </p>
+                <p class="ml-4 lg:ml-8  text-[8px] lg:text-[12px] text-justify">
+                    a.	web posting of the CPSU-College Admission Test (CPSU-CAT) results. <br>
+                    b.	web posting of Room Assignments for CPSU-CAT. <br>
+                    c. 	web posting pertinent to admission and enrolment. <br>
+                    d.	sharing information for accreditation purposes (Accrediting Agency of Chartered Colleges and Universities in the Philippines (AACCUP). <br>
+                    e.	conducting research or surveys for purposes of institutional development. <br>
+                    f.	all guidance and counseling-related functions and services. <br>
+                    g.	other legitimate processes of the University. <br>
+                </p>
+                <p class=" text-[8px] lg:text-[12px] mt-1 lg:mt-2 indent-4 lg:indent-8 text-justify">
+                    I hereby declare that all the information provided during my application are true and accurate to the best of my knowledge. 
+                    I hereby attest to the completeness and accuracy of all the information that I have provided.
+                </p>
+                <p class=" text-[8px] lg:text-[12px] mt-2 indent-4 lg:indent-8 text-justify">
+                    I am fully aware that any false information provided may lead to my automatic dismissal and I will comply with all the terms 
+                    and conditions set by your University.
+                </p>
+                <div class="flex justify-between mt-4 lg:mt-8">
+                    <div>
+                        <h2 class=" text-[8px] lg:text-sm font-bold text-left border-b border-black pt-1 inline-block"><span class="">{{ info.fullname|upper }}</span></h2>
+                        <h3 class=" text-[8px] lg:text-xs text-center">SIGNATURE OVER PRINTED NAME</h3>
+                    </div>
+                    <div>
+                        <h2 class=" text-[8px] lg:text-sm text-center"><span class=""> {{ info.consent_date }}</span></h2>
+                        <h3 class=" text-[8px] lg:text-xs text-left border-t border-black pb-1 inline-block">DATE ACCOMPLISHED</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+    {% include 'components/footer.html' %}
+</body>
+</html>

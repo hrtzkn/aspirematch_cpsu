@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INVENTORY FORM</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/studentHeader.html' %}
+
+<div class="flex flex-1 px-3 sm:px-6 lg:px-8">
+  <main class="flex-grow flex flex-col items-center justify-start mt-24 mb-10 w-full">
+
+    <!-- Progress Bar -->
+<div id="progressBarContainer" class="flex justify-between mb-1"></div>
+
+    <form method="POST"
+          action="{{ url_for('student.studentInventoryForm') }}"
+          id="multiStepForm"
+          class="w-full max-w-4xl space-y-6 text-xs lg:text-base">
+      <section class="formStep bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="0">
+
+      <h3 class="text-xl lg:text-2xl font-semibold mb-4">
+      Personal Information
+      </h3>
+
+      <!-- Name / Nickname -->
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                  <label class="font-semibold block">Name</label>
+                  <input type="text" value="{{ student[1] }}" readonly
+                        class="w-full border border-black rounded px-4 py-2 bg-gray-100 cursor-not-allowed">
+              </div>
+              <div>
+                  <label class="font-semibold block">Nickname</label>
+                  <input type="text" name="nickname"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        oninput="this.value = this.value.toUpperCase()"
+                        value="{{ info['nickname'] or '' }}">
+              </div>
+          </div>
+
+          <!-- Address -->
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                  <label class="font-semibold block">Present Address</label>
+                  <input type="text" name="present_address"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        oninput="this.value = this.value.toUpperCase()"
+                        value="{{ info['present_address'] or '' }}">
+              </div>
+              <div>
+                  <label class="font-semibold block">Provincial Address</label>
+                  <input type="text" name="provincial_address"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        oninput="this.value = this.value.toUpperCase()"
+                        value="{{ info['provincial_address'] or '' }}">
+              </div>
+          </div>
+
+          <!-- Birth Info -->
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                  <label class="font-semibold block">Date of Birth</label>
+                  <input type="date" name="date_of_birth"
+                        onclick="this.showPicker()"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        value="{{ info['date_of_birth'] or '' }}">
+              </div>
+              <div>
+                  <label class="font-semibold block">Place of Birth</label>
+                  <input type="text" name="place_of_birth"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        oninput="this.value = this.value.toUpperCase()"
+                        value="{{ info['place_of_birth'] or '' }}">
+              </div>
+          </div>
+
+          <!-- Age / Order / Siblings -->
+          <div class="grid grid-cols-3 gap-2">
+              <div>
+                  <label class="font-semibold block">Age</label>
+                  <input type="number" name="age"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        value="{{ info['age'] or '' }}">
+              </div>
+              <div>
+                  <label class="font-semibold block">Birth Order</label>
+                  <input type="text" name="birth_order"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        oninput="this.value = this.value.toUpperCase()"
+                        value="{{ info['birth_order'] or '' }}">
+              </div>
+              <div>
+                  <label class="font-semibold block">No. of Siblings</label>
+                  <input type="number" name="siblings_count"
+                        class="w-full border border-black rounded px-4 py-2" required
+                        value="{{ info['siblings_count'] or '0' }}">
+              </div>
+          </div>
+
+          <!-- Gender / Status / Religion / Nationality -->
+          <div class="grid grid-cols-4 gap-4">
+              <div>
+                  <label class="font-semibold block">Gender</label>
+                  <input type="text" value="{{ student[2] }}" readonly
+                        class="w-full border border-black rounded px-4 py-2 bg-gray-100 cursor-not-allowed">
+              </div>
+              <div>
+                  <label class="font-semibold block">Civil Status</label>
+                  <select name="civil_status"
+                          class="w-full p-2 border border-black rounded" required>
+                      <option value="{{ info['civil_status'] or '' }}" selected disabled>{{ info['civil_status'] or '' }}</option>
+                      <option>Single</option>
+                      <option>Married</option>
+                      <option>Separated</option>
+                      <option>Widowed</option>
+                  </select>
+              </div>
+              <div>
+                  <label class="font-semibold block">Religion</label>
+                  <input type="text" name="religion"
+                        class="w-full p-2 border border-black rounded" required
+                        oninput="this.value = this.value.toUpperCase()"
+                        value="{{ info['religion'] or '' }}">
+              </div>
+              <div>
+                  <label class="font-semibold block">Nationality</label>
+                  <input type="text" name="nationality"
+                        class="w-full p-2 border border-black rounded" required
+                        oninput="this.value = this.value.toUpperCase().replace(/[^A-Za-z\s]/g, '')"
+                        value="{{ info['nationality'] or '' }}">
+              </div>
+          </div>
+
+          <div class="flex justify-end mt-6">
+        <button type="button"
+        class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+        Next
+        </button>
+        </div>
+
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 lg:p-10 lg:mb-4" data-step="1">
+
+          <h3 class="text-xl lg:text-2xl font-semibold">Personal Information</h3>
+
+          <div class="grid grid-cols-3 gap-4 mt-2">
+              <div>
+                  <label class="block mt-2">Home Phone No.</label>
+                  <input type="number" name="home_phone" class="block w-full p-2 border border-black rounded"
+                  value="{{ info['home_phone'] or '' }}">
+              </div>
+              <div>
+                  <label class="block mt-2">Mobile No.</label>
+                  <input
+                      type="tel"
+                      name="mobile_no"
+                      id="mobile_no"
+                      class="block w-full p-2 border border-black rounded"
+                      placeholder="09XXXXXXXXX"
+                      maxlength="11"
+                      minlength="11"
+                      oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                      value="{{ info['mobile_no'] or '' }}"
+                      required
+                  >
+                  <small class="text-red-500 hidden" id="mobile-error">
+                      Enter a valid mobile number (09XXXXXXXXX)
+                  </small>
+              </div>
+              <div>
+                  <label class="block mt-2">Email</label>
+                  <input type="email" name="email" value="{{ student[3] }}" class="block w-full p-2 border border-black rounded">
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+              <!-- Weight -->
+              <div>
+                  <label class="block mt-2">Weight (kg)</label>
+                  <div class="flex items-center">
+                      <input
+                          type="number"
+                          name="weight"
+                          min="1"
+                          step="0.1"
+                          class="block w-full p-2 border border-black rounded-l"
+                          placeholder="e.g. 60"
+                          value="{{ info['weight'] or '' }}"
+                          required
+                      >
+                      <span class="px-3 py-2 border border-l-0 border-black rounded-r bg-gray-100">
+                          kg
+                      </span>
+                  </div>
+              </div>
+
+              <!-- Height -->
+              <div>
+                  <label class="block mt-2">Height (cm)</label>
+                  <div class="flex items-center">
+                      <input
+                          type="number"
+                          name="height"
+                          min="50"
+                          step="0.1"
+                          class="block w-full p-2 border border-black rounded-l"
+                          placeholder="e.g. 165"
+                          value="{{ info['height'] or '' }}"
+                          required
+                      >
+                      <span class="px-3 py-2 border border-l-0 border-black rounded-r bg-gray-100">
+                          cm
+                      </span>
+                  </div>
+              </div>
+
+              <!-- Blood Type -->
+              <div>
+                  <label class="block mt-2">Blood Type</label>
+                  <select
+                      name="blood_type"
+                      class="block w-full p-2 border border-black rounded"
+                      required
+                  >
+                      <option value="{{ info['blood_type'] or '' }}" disabled selected>{{ info['blood_type'] or 'Select blood type' }}</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                  </select>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+              <div><label class="block mt-2">Hobbies</label><input name="hobbies" class="block w-full p-2 border border-black rounded" required 
+                oninput="this.value = this.value.toUpperCase()" value="{{ info['hobbies'] or '' }}"></div>
+              <div><label class="block mt-2">Talents</label><input name="talents" class="block w-full p-2 border border-black rounded" required 
+                oninput="this.value = this.value.toUpperCase()" value="{{ info['talents'] or '' }}"></div>
+          </div>
+
+          <h4 class="mt-2 font-semibold">Emergency Contact</h4>
+          <div class="grid grid-cols-2 gap-4">
+              <div><label class="block mt-2">Name to notify:</label><input name="emergency_name" class="block w-full p-2 border border-black rounded" required 
+                oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['emergency_name'] or '' }}"></div>
+              <div><label class="block mt-2">Relationship:</label><input name="emergency_relationship" class="block w-full p-2 border border-black rounded" required 
+                oninput="this.value = this.value.toUpperCase()" value="{{ info['emergency_relationship'] or '' }}"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+              <div><label class="block mt-2">Address:</label><input name="emergency_address" class="block w-full p-2 border border-black rounded" required 
+                oninput="this.value = this.value.toUpperCase()" value="{{ info['emergency_address'] or '' }}"></div>
+              <div>
+                  <label class="block mt-2">Contact No.:</label>
+                  <input
+                      type="tel"
+                      name="emergency_contact"
+                      id="emergency_contact"
+                      maxlength="11"
+                      placeholder="09XXXXXXXXX"
+                      class="block w-full p-2 border border-black rounded"
+                      oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                      value="{{ info['emergency_contact'] or '' }}"
+                      required
+                  >
+                  <small class="text-red-500 hidden" id="emergency-error">
+                      Enter a valid contact number (09XXXXXXXXX)
+                  </small>
+              </div>
+          </div>
+
+          <div class="flex justify-between mt-6">
+
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section><section class="formStep  hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="2">
+            <h3 class="text-xl lg:text-2xl font-semibold mb-6">Family Background</h3>
+
+          <div class="grid grid-cols-3 font-semibold mb-2">
+              <div class="text-center">FATHER</div>
+              <div></div>
+              <div class="text-center">MOTHER</div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+              <input type="text" name="father_name" class="p-2 border border-black rounded w-full" required oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['father_name'] or '' }}">
+              <label class="text-[9px] lg:text-sm flex justify-center mt-2">NAME:</label>
+              <input type="text" name="mother_name" class="p-2 border border-black rounded w-full" required oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['mother_name'] or '' }}">
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+              <input type="number" name="father_age" class="p-2 border border-black rounded w-full" required value="{{ info['father_age'] or '' }}">
+              <label class="flex justify-center text-[9px] lg:text-sm mt-2">AGE:</label>
+              <input type="number" name="mother_age" class="p-2 border border-black rounded w-full" required value="{{ info['mother_age'] or '' }}">
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+              <input type="text" name="father_education" class="p-2 border border-black rounded w-full" required oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['father_education'] or '' }}">
+              <label class="flex justify-center text-[9px] lg:text-sm mt-2">HIGHEST EDUCATIONAL ATTAINMENT:</label>
+              <input type="text" name="mother_education" class="p-2 border border-black rounded w-full" required oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['mother_education'] or '' }}">
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+              <input type="text" name="father_occupation" class="p-2 border border-black rounded w-full" required oninput="this.value = this.value.toUpperCase()" value="{{ info['father_occupation'] or '' }}">
+              <label class="flex justify-center text-[9px] lg:text-sm mt-2">OCCUPATION:</label>
+              <input type="text" name="mother_occupation" class="p-2 border border-black rounded w-full" required oninput="this.value = this.value.toUpperCase()" value="{{ info['mother_occupation'] or '' }}">
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+              <!-- Father Income -->
+              <div class="flex items-center">
+                  <span class="px-3 py-2 border border-r-0 border-black rounded-l bg-gray-100">
+                      ₱
+                  </span>
+                  <input
+                      type="number"
+                      name="father_income"
+                      min="0"
+                      step="1"
+                      placeholder="0"
+                      value="{{ info['father_income'] or '0' }}"
+                      required
+                      class="p-2 border border-black rounded-r w-full"
+                  >
+              </div>
+
+              <label class="flex justify-center text-[9px] lg:text-sm mt-2 text-center">
+                  AVERAGE INCOME PER MONTH
+              </label>
+
+              <!-- Mother Income -->
+              <div class="flex items-center">
+                  <span class="px-3 py-2 border border-r-0 border-black rounded-l bg-gray-100">
+                      ₱
+                  </span>
+                  <input
+                      type="number"
+                      name="mother_income"
+                      min="0"
+                      step="1"
+                      value="{{ info['mother_income'] or '0' }}"
+                      required
+                      class="p-2 border border-black rounded-r w-full"
+                  >
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+              <!-- Father Contact -->
+              <input
+                  type="tel"
+                  name="father_contact"
+                  maxlength="11"
+                  placeholder="09XXXXXXXXX"
+                  required
+                  class="p-2 border border-black rounded w-full"
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                  value="{{ info['father_contact'] or '' }}">
+
+              <label class="flex justify-center text-[9px] lg:text-sm mt-2 text-center">
+                  CONTACT NUMBER/S
+              </label>
+
+              <!-- Mother Contact -->
+              <input
+                  type="tel"
+                  name="mother_contact"
+                  maxlength="11"
+                  placeholder="09XXXXXXXXX"
+                  required
+                  class="p-2 border border-black rounded w-full"
+                  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                  value="{{ info['mother_contact'] or '' }}">
+          </div>
+
+          <div class="flex justify-between mt-6">
+
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+        
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="3">
+
+        <h3 class="text-xl lg:text-2xl font-semibold">Status of Parents</h3>
+
+        <!-- General Status (ONLY ONE allowed) -->
+        <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="radio" name="parent_status" value="married_living_together" {% if info['parent_status'] == 'married_living_together' %}checked{% endif %} required>
+        <span>Married & Living Together</span>
+        </label>
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="radio" name="parent_status" value="living_not_married" {% if info['parent_status'] == 'living_not_married' %}checked{% endif %}>
+        <span>Living in (Not Married)</span>
+        </label>
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="radio" name="parent_status" value="legally_separated" {% if info['parent_status'] == 'legally_separated' %}checked{% endif %}>
+        <span>Legally Separated</span>
+        </label>
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="radio" name="parent_status" value="mother_widow" {% if info['parent_status'] == 'mother_widow' %}checked{% endif %}>
+        <span>Mother (Widow)</span>
+        </label>
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="radio" name="parent_status" value="father_widower" {% if info['parent_status'] == 'father_widower' %}checked{% endif %}>
+        <span>Father (Widower)</span>
+        </label>
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="radio" name="parent_status" value="separated" {% if info['parent_status'] == 'separated' %}checked{% endif %}>
+        <span>Separated</span>
+        </label>
+
+        </div>
+
+        <!-- Special Case -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 w-fit gap-4">
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="checkbox" name="another_family" value="father" disabled {% if info['father_another_family'] %}checked{% endif %}>
+        <span>Father is with another family</span>
+        </label>
+
+        <label class=" border p-1 rounded-md cursor-pointer">
+        <input type="checkbox" name="another_family" value="mother" disabled {% if info['mother_another_family'] %}checked{% endif %}>
+        <span>Mother is with another family</span>
+        </label>
+
+        </div>
+
+        <div class="flex justify-between mt-6">
+
+        <button type="button"
+        class="prevBtn bg-gray-300 px-6 py-2 rounded">
+        Previous
+        </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+        </div>
+
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="4">
+
+          <h3 class="text-xl lg:text-2xl font-semibold mt-2 mb-4">Academic Information:</h3>
+          <div class="grid grid-cols-4 font-semibold text-[10px] lg:text-[14px] text-center">
+              <div class="p-2 border border-black">LEVEL</div>
+              <div class="p-2 border border-black">NAME OF SCHOOL</div>
+              <div class="p-2 border border-black">YEAR GRADUATED</div>
+              <div class="p-2 border border-black">AWARDS RECEIVED</div>
+          </div>
+
+          <div class="grid grid-cols-4">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold">ELEMENTARY:</div>
+              <input type="text" name="elementary_school_name" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['elementary_school_name'] or '' }}" required>
+              <input type="number" name="elementary_year_graduated" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['elementary_year_graduated'] or '' }}" required>
+              <input type="text" name="elementary_awards" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['elementary_awards'] or '' }}">
+          </div>
+
+          <div class="grid grid-cols-4">
+              <div class="p-2 border text-[10px] lg:text-[14px] border-black font-semibold">JUNIOR HIGH SCHOOL:</div>
+              <input type="text" name="junior_high_school_name" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['junior_high_school_name'] or '' }}" required>
+              <input type="number" name="junior_high_year_graduated" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['junior_high_year_graduated'] or '' }}" required>
+              <input type="text" name="junior_high_awards" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['junior_high_awards'] or '' }}">
+          </div>
+
+          <div class="grid grid-cols-4">
+              <div class="p-2 border text-[10px] lg:text-[14px] border-black font-semibold">
+                  SENIOR HIGH SCHOOL:
+                  <div class="mt-2">
+                      <div class="flex gap-2 items-center">
+                          <label for="senior_track" class="text-[8px] lg:text-[12px]">TRACK:</label>
+                          <input type="text" name="senior_high_track" class="border-b border-black px-2 py-1 text-[8px] lg:text-[12px] w-full" oninput="this.value = this.value.toUpperCase()" value="{{ info['senior_high_track'] or '' }}" required>
+                      </div>
+                      <div class="flex gap-2 items-center mt-1">
+                          <label for="senior_strand" class="text-[8px] lg:text-[12px]">STRAND:</label>
+                          <input type="text" name="senior_high_strand" class="border-b border-black px-2 py-1 text-[8px] lg:text-[12px] w-full" oninput="this.value = this.value.toUpperCase()" value="{{ info['senior_high_strand'] or '' }}" required>
+                      </div>
+                  </div>
+              </div>
+              <input type="text" name="senior_high_school_name" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['senior_high_school_name'] or '' }}" required>
+              <input type="number" name="senior_high_year_graduated" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['senior_high_year_graduated'] or '' }}" required>
+              <input type="text" name="senior_high_awards" class="p-2 border border-black" oninput="this.value = this.value.toUpperCase()" value="{{ info['senior_high_awards'] or '' }}">
+          </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="5">
+
+          <h3 class="text-xl lg:text-2xl font-semibold mt-1 mb-2">Academic Information:</h3>
+
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label class="block font-semibold mt-2">Subject interested to:</label>
+            <input type="text" name="subject_interested" class="w-full border border-black rounded px-4 py-2" required 
+            oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['subject_interested'] or '' }}">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label class="block font-semibold mt-2">Organization Membership:</label>
+            <input type="text" name="org_membership" class="w-full border border-black rounded px-4 py-2"
+             oninput="this.value = this.value.toUpperCase()" required value="{{ info['org_membership'] or '' }}">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label class="block font-semibold mt-2">How is your studies financed?</label>
+            <input type="text" name="study_finance" class="w-full border border-black rounded px-4 py-2" required 
+            oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['study_finance'] or '' }}">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 justify-between gap-4">
+          <div>
+            <label class="block font-semibold mt-2">Is your present course / program your personal choice?</label>
+            <span id="error-course-choice" class="text-red-600 text-sm mt-1 hidden">Please select Yes or No before proceeding.</span>
+          </div>
+
+          <div class="mt-4">
+            <label class=" border p-1 rounded-md cursor-pointer">
+            <input type="radio" name="course_personal_choice" value="yes" required {% if info['course_personal_choice'] %}checked{% endif %}>
+            <span>YES</span>
+            </label>
+
+            <label class=" border ml-2 p-1 rounded-md cursor-pointer">
+            <input type="radio" name="course_personal_choice" value="no" required {% if info['course_personal_choice'] is not none and not info['course_personal_choice'] %}checked{% endif %}>
+            <span>NO</span>
+            </label>
+          </div>
+        </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="6" data-condition="no">
+
+          <h3 class="text-xl lg:text-2xl font-semibold mt-1 mb-2">Academic Information:</h3>
+
+          <div class="grid grid-cols-1 gap-4">
+              <div>
+                  <label class="block  font-semibold mt-2">If NO,</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+              <div>
+                  <label class="block font-semibold mt-2">A. Who influenced you?</label>
+                  <input type="text" name="influenced_by" class="w-full border border-black rounded px-4 py-2" required 
+                  oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['influenced_by'] or '' }}">
+              </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+              <div>
+                  <label class="block font-semibold mt-2">B. How do you feel about the course not being your first choice?</label>
+                  <input type="text" name="feeling_about_course" class="w-full border border-black rounded px-4 py-2" required 
+                  oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['feeling_about_course'] or '' }}">
+              </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4">
+              <div>
+                  <label class="block font-semibold mt-2">C. What is your personal choice?</label>
+                  <input type="text" name="personal_choice" class="w-full border border-black rounded px-4 py-2" required 
+                  oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')" value="{{ info['personal_choice'] or '' }}">
+              </div>
+          </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="7">
+
+          <h3 class="text-xl lg:text-2xl font-semibold mb-4">
+              Why did you choose to enroll in CPSU?
+          </h3>
+
+          <!-- Reasons -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer mb-2 transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Quality education" {% if "Quality education" in selected_reasons %}checked{% endif %}>
+                  <span>Quality education</span>
+              </label>
+
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer mb-2 transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Free tuition fee" {% if "Free tuition fee" in selected_reasons %}checked{% endif %}>
+                  <span>Free tuition fee</span>
+              </label>
+
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer mb-2 transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Competitive Faculty Members" {% if "Competitive Faculty Members" in selected_reasons %}checked{% endif %}>
+                  <span>Competitive Faculty Members</span>
+              </label>
+
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer mb-2 transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Good facilities" {% if "Good facilities" in selected_reasons %}checked{% endif %}>
+                  <span>Good facilities</span>
+              </label>
+
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer mb-2 transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Proximity and accessibility" {% if "Proximity and accessibility" in selected_reasons %}checked{% endif %}>
+                  <span>Proximity and accessibility</span>
+              </label>
+
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer mb-2 transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Good reputation" {% if "Good reputation" in selected_reasons %}checked{% endif %}>
+                  <span>Good reputation</span>
+              </label>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mt-2">
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Recommended by friends, relatives, etc." {% if "Recommended by friends" in selected_reasons %}checked{% endif %}>
+                  <span>Recommended by friends, relatives, etc.</span>
+              </label>
+
+              <label class="enroll-option flex items-center gap-2 border p-2 rounded-md cursor-pointer transition duration-200">
+                  <input type="checkbox" name="enroll_reasons[]" value="Performance in the licensure examination" {% if "Performance in the licensure examination" in selected_reasons %}checked{% endif %}>
+                  <span>Performance in the licensure examination</span>
+              </label>
+          </div>
+
+          <!-- Others -->
+          <div class="mt-4">
+              <label class="block mb-1">Others, please specify:</label>
+              <input
+                  type="text"
+                  name="other_reason"
+                  class="w-full border border-black rounded-md px-4 py-2"
+                  value="{{ info['other_reason'] or '' }}"
+                  placeholder="Type your reason here"
+                  oninput="this.value = this.value.replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')"
+              >
+              <span id="enrollCpsuError"
+                  class="text-red-600 text-sm mt-1 hidden">
+                  Please select at least one reason or specify in "Others".
+              </span>
+          </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="8">
+
+          <h3 class="text-xl lg:text-2xl font-semibold mb-4">
+              What other school do you consider?
+          </h3>
+
+          <!-- Schools -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="SUNN" {% if "SUNN" in other_schools_selected %}checked{% endif %}>
+                  <span>SUNN</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="CHMSU" {% if "CHMSU" in other_schools_selected %}checked{% endif %}>
+                  <span>CHMSU</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="PNU-V" {% if "PNU-V" in other_schools_selected %}checked{% endif %}>
+                  <span>PNU-V</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="TAÑON" {% if "TAÑON" in other_schools_selected %}checked{% endif %}>
+                  <span>TAÑON</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="CSTR" {% if "CSTR" in other_schools_selected %}checked{% endif %}>
+                  <span>CSTR</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="UNO R" {% if "UNO-R" in other_schools_selected %}checked{% endif %}>
+                  <span>UNO R</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="NORSU" {% if "NORSU" in other_schools_selected %}checked{% endif %}>
+                  <span>NORSU</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="TUP-V" {% if "TUP-V" in other_schools_selected %}checked{% endif %}>
+                  <span>TUP-V</span>
+              </label>
+
+              <label class="school-option flex items-center gap-2 border p-2 rounded-md cursor-pointer w-fit transition duration-200">
+                  <input type="checkbox" name="other_school[]" value="CSR" {% if "CSR" in other_schools_selected %}checked{% endif %}>
+                  <span>CSR</span>
+              </label>
+          </div>
+
+          <!-- Others -->
+          <div class="mt-4">
+              <label class="block mb-1">Others, please specify:</label>
+              <input
+                  type="text"
+                  id="otherSchoolInput"
+                  name="other_school_other"
+                  value="{{ info['other_school'] or '' }}"
+                  class="w-full border border-black rounded-md px-4 py-2"
+                  placeholder="Type school name here"
+              >
+              <span id="schoolConsiderError"
+                  class="text-red-600 text-sm mt-1 hidden">
+                  Please select at least one school or specify in "Others".
+              </span>
+          </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="9">
+
+          <h3 class="text-xl lg:text-2xl font-semibold mb-4">Behavior Information:</h3>
+
+          <div class="grid grid-cols-3 font-semibold text-[10px] lg:text-[14px] text-center">
+              <div class="p-2 border border-black bg-gray-100">Check if you ever experience the following concerns:</div>
+              <div class="p-2 border border-black bg-gray-100">When did it happen?</div>
+              <div class="p-2 border border-black bg-gray-100">Does it still bother you?</div>
+          </div>
+
+          <div class="grid grid-cols-3 transition duration-200">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="bullying"  name="bullying" value="yes" {% if info['bullying'] %}checked{% endif %}>
+                  <label for="bullying" class="cursor-pointer">Bullying</label>
+              </div>
+              <input type="text" name="bullying_when" class="behavior-when p-2 border border-black" disabled placeholder="e.g., High school"
+              value="{{ info['bullying_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" name="bullying_bother" value="yes" disabled id="bullying_bother_yes" {% if info['bullying_bother'] %}checked{% endif %}>
+                  <label for="bullying_bother_yes">YES</label>
+                  <input type="radio" name="bullying_bother" value="no" disabled id="bullying_bother_no" class="ml-4" {% if info['bullying_bother'] is not none and not info['bullying_bother'] %}checked{% endif %}>
+                  <label for="bullying_bother_no">NO</label>
+              </div>
+          </div>
+
+          <!-- Suicidal thoughts -->
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="suicidal_thoughts" name="suicidal_thoughts" value="yes" {% if info['suicidal_thoughts'] %}checked{% endif %}>
+                  <label class="cursor-pointer" for="suicidal_thoughts">Suicidal thoughts</label>
+              </div>
+              <input type="text" name="suicidal_thoughts_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['suicidal_thoughts_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" name="suicidal_thoughts_bother" value="yes" disabled id="suicidal_thoughts_bother_yes" {% if info['suicidal_thoughts_bother'] %}checked{% endif %}>
+                  <label for="suicidal_thoughts_bother_yes">YES</label>
+                  <input type="radio" name="suicidal_thoughts_bother" value="no" disabled id="suicidal_thoughts_bother_no" class="ml-4" {% if info['suicidal_thoughts_bother'] is not none and not info['suicidal_thoughts_bother'] %}checked{% endif %}>
+                  <label for="suicidal_thoughts_bother_no">NO</label>
+              </div>
+          </div>
+
+          <!-- Suicidal attempts -->
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="suicidal_attempts" name="suicidal_attempts" value="yes" {% if info['suicidal_attempts'] %}checked{% endif %}>
+                  <label for="suicidal_attempts" class="cursor-pointer">Suicidal attempts</label>
+              </div>
+              <input type="text" name="suicidal_attempts_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['suicidal_attempts_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" name="suicidal_attempts_bother" value="yes" disabled id="suicidal_attempts_bother_yes" {% if info['suicidal_attempts_bother'] %}checked{% endif %}>
+                  <label for="suicidal_attempts_bother_yes">YES</label>
+                  <input type="radio" name="suicidal_attempts_bother" value="no" disabled id="suicidal_attempts_bother_no" class="ml-4" {% if info['suicidal_attempts_bother'] is not none and not info['suicidal_attempts_bother'] %}checked{% endif %}>
+                  <label for="suicidal_attempts_bother_no">NO</label>
+              </div>
+          </div>
+
+          <!-- Panic attacks -->
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="panic_attacks" name="panic_attacks" value="yes" {% if info['panic_attacks'] %}checked{% endif %}>
+                  <label for="panic_attacks" class="cursor-pointer">Panic attacks</label>
+              </div>
+              <input type="text" name="panic_attacks_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['panic_attacks_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" name="panic_attacks_bother" id="panic_attacks_bother_yes" value="yes" {% if info['panic_attacks_bother'] %}checked{% endif %}>
+                  <label for="panic_attacks_bother_yes">YES</label>
+                  <input type="radio" name="panic_attacks_bother" id="panic_attacks_bother_no" value="no" disabled class="ml-4" {% if info['panic_attacks_bother'] is not none and not info['panic_attacks_bother'] %}checked{% endif %}>
+                  <label for="panic_attacks_bother_no">NO</label>
+              </div>
+          </div>
+
+          <!-- Anxiety -->
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="anxiety" name="anxiety" value="yes" {% if info['anxiety'] %}checked{% endif %}>
+                  <label for="anxiety" class="cursor-pointer">Anxiety</label>
+              </div>
+              <input type="text" name="anxiety_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['anxiety_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="anxiety_bother_yes" name="anxiety_bother" value="yes" disabled {% if info['anxiety_bother'] %}checked{% endif %}>
+                  <label for="anxiety_bother_yes">YES</label>
+                  <input type="radio" id="anxiety_bother_no" name="anxiety_bother" value="no" disabled class="ml-4" {% if info['anxiety_bother'] is not none and not info['anxiety_bother'] %}checked{% endif %}>
+                  <label for="anxiety_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="depression" name="depression" value="yes" {% if info['depression'] %}checked{% endif %}>
+                  <label for="depression" class="cursor-pointer">Depression</label>
+              </div>
+              <input type="text" name="depression_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['depression_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="depression_bother_yes" name="depression_bother" value="yes" disabled {% if info['depression_bother'] %}checked{% endif %}>
+                  <label for="depression_bother_yes">YES</label>
+                  <input type="radio" id="depression_bother_no" name="depression_bother" value="no" disabled class="ml-4" {% if info['depression_bother'] is not none and not info['depression_bother'] %}checked{% endif %}>
+                  <label for="depression_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="self_anger_issues" name="self_anger_issues" value="yes" {% if info['self_anger_issues'] %}checked{% endif %}>
+                  <label for="self_anger_issues" class="cursor-pointer">Self / Anger Management Issues</label>
+              </div>
+              <input type="text" name="self_anger_issues_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['self_anger_issues_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="self_anger_issues_bother_yes" name="self_anger_issues_bother" value="yes" disabled {% if info['self_anger_issues_bother'] %}checked{% endif %}>
+                  <label for="self_anger_issues_bother_yes">YES</label>
+                  <input type="radio" id="self_anger_issues_bother_no" name="self_anger_issues_bother" value="no" disabled class="ml-4" {% if info['self_anger_issues_bother'] is not none and not info['self_anger_issues_bother'] %}checked{% endif %}>
+                  <label for="self_anger_issues_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="recurring_negative_thoughts" name="recurring_negative_thoughts" value="yes" {% if info['recurring_negative_thoughts'] %}checked{% endif %}>
+                  <label for="recurring_negative_thoughts" class="cursor-pointer">Recurring negative thoughts</label>
+              </div>
+              <input type="text" name="recurring_negative_thoughts_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['recurring_negative_thoughts_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="recurring_negative_thoughts_bother_yes" name="recurring_negative_thoughts_bother" value="yes" disabled {% if info['recurring_negative_thoughts_bother'] %}checked{% endif %}>
+                  <label for="recurring_negative_thoughts_bother_yes">YES</label>
+                  <input type="radio" id="recurring_negative_thoughts_bother_no" name="recurring_negative_thoughts_bother" value="no" disabled class="ml-4" {% if info['recurring_negative_thoughts_bother'] is not none and not info['recurring_negative_thoughts_bother'] %}checked{% endif %}>
+                  <label for="recurring_negative_thoughts_bother_no">NO</label>
+              </div>
+          </div>
+
+          <p id="behavior-warning" class="text-red-600 text-center mt-4 hidden text-sm"></p>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="10">
+
+            <h3 class="text-xl lg:text-2xl font-semibold mt-2 mb-4">Behavior Information:</h3>
+        <div class="grid grid-cols-3 font-semibold text-center">
+          <div class="p-2 border border-black">Check if you ever experience the following concerns:</div>
+          <div class="p-2 border border-black">When did it happen?</div>
+          <div class="p-2 border border-black">Does it still bothering you?</div>
+        </div>
+
+        <div class="grid grid-cols-3">
+          <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+            <input type="checkbox" class="behavior-check cursor-pointer" id="low_self_esteem" name="low_self_esteem" value="yes"{% if info['low_self_esteem'] %}checked{% endif %}>
+            <label for="low_self_esteem" class="cursor-pointer">Low self-esteem</label>
+          </div>
+          <input type="text" name="low_self_esteem_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['low_self_esteem_when'] or '' }}">
+          <div class="text-center p-2 border border-black">
+            <input type="radio" name="low_self_esteem_bother" value="yes" disabled id="low_self_esteem_bother_yes" {% if info['low_self_esteem_bother'] %}checked{% endif %}>
+            <label for="low_self_esteem_bother_yes">YES</label>
+            <input type="radio" name="low_self_esteem_bother" value="no" disabled id="low_self_esteem_bother_no" class="ml-4" {% if info['low_self_esteem_bother'] is not none and not info['low_self_esteem_bother'] %}checked{% endif %}>
+            <label for="low_self_esteem_bother_no">NO</label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3">
+          <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+            <input type="checkbox" class="behavior-check cursor-pointer" id="poor_study_habits" name="poor_study_habits" value="yes" {% if info['poor_study_habits'] %}checked{% endif %}>
+            <label for="poor_study_habits" class="cursor-pointer">Poor study habits</label>
+          </div>
+          <input type="text" name="poor_study_habits_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['poor_study_habits_when'] or '' }}">
+          <div class="text-center p-2 border border-black">
+            <input type="radio" name="poor_study_habits_bother" value="yes" disabled id="poor_study_habits_bother_yes" {% if info['poor_study_habits_bother'] %}checked{% endif %}>
+            <label for="poor_study_habits_bother_yes">YES</label>
+            <input type="radio" name="poor_study_habits_bother" value="no" disabled id="poor_study_habits_bother_no" class="ml-4" {% if info['poor_study_habits_bother'] is not none and not info['poor_study_habits_bother'] %}checked{% endif %}>
+            <label for="poor_study_habits_bother_no">NO</label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3">
+          <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+            <input type="checkbox" class="behavior-check cursor-pointer" id="poor_in_decision_making" name="poor_in_decision_making" value="yes" {% if info['poor_in_decision_making'] %}checked{% endif %}>
+            <label for="poor_in_decision_making" class="cursor-pointer">Poor in decision making</label>
+          </div>
+          <input type="text" name="poor_in_decision_making_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['poor_in_decision_making_when'] or '' }}">
+          <div class="text-center p-2 border border-black">
+            <input type="radio" name="poor_in_decision_making_bother" value="yes" disabled id="poor_in_decision_making_bother_yes" {% if info['poor_in_decision_making_bother'] %}checked{% endif %}>
+            <label for="poor_in_decision_making_bother_yes">YES</label>
+            <input type="radio" name="poor_in_decision_making_bother" value="no" disabled id="poor_in_decision_making_bother_no" class="ml-4" {% if info['poor_in_decision_making_bother'] is not none and not info['poor_in_decision_making_bother'] %}checked{% endif %}>
+            <label for="poor_in_decision_making_bother_no">NO</label>
+          </div>
+        </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="impulsivity" name="impulsivity" value="yes" {% if info['impulsivity'] %}checked{% endif %}>
+                  <label for="impulsivity" class="cursor-pointer">Impulsivity</label>
+              </div>
+              <input type="text" name="impulsivity_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['impulsivity_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="impulsivity_bother_yes" name="impulsivity_bother" value="yes" disabled {% if info['impulsivity_bother'] %}checked{% endif %}>
+                  <label for="impulsivity_bother_yes">YES</label>
+                  <input type="radio" id="impulsivity_bother_no" name="impulsivity_bother" value="no" disabled class="ml-4" {% if info['impulsivity_bother'] is not none and not info['impulsivity_bother'] %}checked{% endif %}>
+                  <label for="impulsivity_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="poor_sleeping_habits" name="poor_sleeping_habits" value="yes" {% if info['poor_sleeping_habits'] %}checked{% endif %}>
+                  <label for="poor_sleeping_habits" class="cursor-pointer">Poor sleeping habits</label>
+              </div>
+              <input type="text" name="poor_sleeping_habits_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['poor_sleeping_habits_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="poor_sleeping_habits_bother_yes" name="poor_sleeping_habits_bother" value="yes" disabled {% if info['poor_sleeping_habits_bother'] %}checked{% endif %}>
+                  <label for="poor_sleeping_habits_bother_yes">YES</label>
+                  <input type="radio" id="poor_sleeping_habits_bother_no" name="poor_sleeping_habits_bother" value="no" disabled class="ml-4" {% if info['poor_sleeping_habits_bother'] is not none and not info['poor_sleeping_habits_bother'] %}checked{% endif %}>
+                  <label for="poor_sleeping_habits_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="loss_of_appetite" name="loss_of_appetite" value="yes" {% if info['loss_of_appetite'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Loss of appetite</label>
+              </div>
+              <input type="text" name="loss_of_appetite_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['loss_of_appetite_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="loss_of_appetite_bother_yes" name="loss_of_appetite_bother" value="yes" disabled {% if info['loss_of_appetite_bother'] %}checked{% endif %}>
+                  <label for="loss_of_appetite_bother_yes">YES</label>
+                  <input type="radio" id="loss_of_appetite_bother_no" name="loss_of_appetite_bother" value="no" disabled class="ml-4" {% if info['loss_of_appetite_bother'] is not none and not info['loss_of_appetite_bother'] %}checked{% endif %}>
+                  <label for="loss_of_appetite_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="over_eating" name="over_eating" value="yes" {% if info['over_eating'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Over-eating</label>
+              </div>
+              <input type="text" name="over_eating_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['over_eating_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="over_eating_bother_yes" name="over_eating_bother" value="yes" disabled {% if info['over_eating_bother'] %}checked{% endif %}>
+                  <label for="over_eating_bother_yes">YES</label>
+                  <input type="radio" id="over_eating_bother_no" name="over_eating_bother" value="no" disabled class="ml-4" {% if info['over_eating_bother'] is not none and not info['over_eating_bother'] %}checked{% endif %}>
+                  <label for="over_eating_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="poor_hygiene" name="poor_hygiene" value="yes" {% if info['poor_hygiene'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Poor hygiene</label>
+              </div>
+              <input type="text" name="poor_hygiene_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['poor_hygiene_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="poor_hygiene_bother_yes" name="poor_hygiene_bother" value="yes" disabled {% if info['poor_hygiene_bother'] %}checked{% endif %}>
+                  <label>YES</label>
+                  <input type="radio" id="poor_hygiene_bother_no" name="poor_hygiene_bother" value="no" disabled class="ml-4" {% if info['poor_hygiene_bother'] is not none and not info['poor_hygiene_bother'] %}checked{% endif %}>
+                  <label for="poor_hygiene_bother_no">NO</label>
+              </div>
+          </div>
+
+          <p id="behavior-warning" class="text-red-600 text-center mt-4 hidden text-sm"></p>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="11">
+
+            <h3 class="text-xl lg:text-2xl font-semibold mt-2 mb-4">Behavior Information:</h3>
+          <div class="grid grid-cols-3 font-semibold text-center">
+              <div class="p-2 border border-black">Check if you ever experience the following concerns:</div>
+              <div class="p-2 border border-black">When did it happen?</div>
+              <div class="p-2 border border-black">Does it still bothering you?</div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="withdrawal_isolation" name="withdrawal_isolation" value="yes" {% if info['withdrawal_isolation'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Withdrawal / Isolation</label>
+              </div>
+              <input type="text" name="withdrawal_isolation_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['withdrawal_isolation_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="withdrawal_isolation_bother_yes" name="withdrawal_isolation_bother" value="yes" disabled {% if info['withdrawal_isolation_bother'] %}checked{% endif %}>
+                  <label for="withdrawal_isolation_bother_yes">YES</label>
+                  <input type="radio" id="withdrawal_isolation_bother_no" name="withdrawal_isolation_bother" value="no" disabled class="ml-4" {% if info['withdrawal_isolation_bother'] is not none and not info['withdrawal_isolation_bother'] %}checked{% endif %}>
+                  <label for="withdrawal_isolation_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="family_problem" name="family_problem" value="yes" {% if info['family_problem'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Family problem</label>
+              </div>
+              <input type="text" name="family_problem_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['family_problem_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="family_problem_bother_yes" name="family_problem_bother" value="yes" disabled {% if info['family_problem_bother'] %}checked{% endif %}>
+                  <label for="family_problem_bother_yes">YES</label>
+                  <input type="radio" id="family_problem_bother_no" name="family_problem_bother" value="no" disabled class="ml-4" {% if info['family_problem_bother'] is not none and not info['family_problem_bother'] %}checked{% endif %}>
+                  <label for="family_problem_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="other_relationship_problem" name="other_relationship_problem" value="yes" {% if info['other_relationship_problem'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Other relationship problems</label>
+              </div>
+              <input type="text" name="other_relationship_problem_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['other_relationship_problem_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="other_relationship_problem_bother_yes" name="other_relationship_problem_bother" value="yes" disabled {% if info['other_relationship_problem_bother'] %}checked{% endif %}>
+                  <label for="other_relationship_problem_bother_yes">YES</label>
+                  <input type="radio" id="other_relationship_problem_bother_no" name="other_relationship_problem_bother" value="no" disabled class="ml-4" {% if info['other_relationship_problem_bother'] is not none and not info['other_relationship_problem_bother'] %}checked{% endif %}>
+                  <label for="other_relationship_problem_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="alcohol_addiction" name="alcohol_addiction" value="yes" {% if info['alcohol_addiction'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Alcohol addiction</label>
+              </div>
+              <input type="text" name="alcohol_addiction_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['alcohol_addiction_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="alcohol_addiction_bother_yes" name="alcohol_addiction_bother" value="yes" disabled {% if info['alcohol_addiction_bother'] %}checked{% endif %}>
+                  <label for="alcohol_addiction_bother_yes">YES</label>
+                  <input type="radio" id="alcohol_addiction_bother_no" name="alcohol_addiction_bother" value="no" disabled class="ml-4" {% if info['alcohol_addiction_bother'] is not none and not info['alcohol_addiction_bother'] %}checked{% endif %}>
+                  <label for="alcohol_addiction_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="gambling_addiction" name="gambling_addiction" value="yes" {% if info['gambling_addiction'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Gambling addiction</label>
+              </div>
+              <input type="text" name="gambling_addiction_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['gambling_addiction_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="gambling_addiction_bother_yes" name="gambling_addiction_bother" value="yes" disabled {% if info['gambling_addiction_bother'] %}checked{% endif %}>
+                  <label for="gambling_addiction_bother_yes">YES</label>
+                  <input type="radio" id="gambling_addiction_bother_no" name="gambling_addiction_bother" value="no" disabled class="ml-4" {% if info['gambling_addiction_bother'] is not none and not info['gambling_addiction_bother'] %}checked{% endif %}>
+                  <label for="gambling_addiction_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="drug_addiction" name="drug_addiction" value="yes" {% if info['drug_addiction'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Drug addiction</label>
+              </div>
+              <input type="text" name="drug_addiction_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['drug_addiction_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="drug_addiction_bother_yes" name="drug_addiction_bother" value="yes" disabled {% if info['drug_addiction_bother'] %}checked{% endif %}>
+                  <label for="drug_addiction_bother_yes">YES</label>
+                  <input type="radio" id="drug_addiction_bother_no" name="drug_addiction_bother" value="no" disabled class="ml-4" {% if info['drug_addiction_bother'] is not none and not info['drug_addiction_bother'] %}checked{% endif %}>
+                  <label for="drug_addiction_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="computer_addiction" name="computer_addiction" value="yes" {% if info['computer_addiction'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Computer addiction</label>
+              </div>
+              <input type="text" name="computer_addiction_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['computer_addiction_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="computer_addiction_bother_yes" name="computer_addiction_bother" value="yes" disabled {% if info['computer_addiction_bother'] %}checked{% endif %}>
+                  <label for="computer_addiction_bother_yes">YES</label>
+                  <input type="radio" id="computer_addiction_bother_no" name="computer_addiction_bother" value="no" disabled class="ml-4" {% if info['computer_addiction_bother'] is not none and not info['computer_addiction_bother'] %}checked{% endif %}>
+                  <label for="computer_addiction_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="sexual_harassment" name="sexual_harassment" value="yes" {% if info['sexual_harassment'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Sexual harassment</label>
+              </div>
+              <input type="text" name="sexual_harassment_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['sexual_harassment_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="sexual_harassment_bother_yes" name="sexual_harassment_bother" value="yes" disabled {% if info['sexual_harassment_bother'] %}checked{% endif %}>
+                  <label for="sexual_harassment_bother_yes">YES</label>
+                  <input type="radio" id="sexual_harassment_bother_no" name="sexual_harassment_bother" value="no" disabled class="ml-4" {% if info['sexual_harassment_bother'] is not none and not info['sexual_harassment_bother'] %}checked{% endif %}>
+                  <label for="sexual_harassment_bother_no">NO</label>
+              </div>
+          </div>
+
+          <p id="behavior-warning" class="text-red-600 text-center mt-4 hidden text-sm"></p>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="12">
+
+            <h3 class="text-xl lg:text-2xl font-semibold mt-2 mb-4">Behavior Information:</h3>
+          <div class="grid grid-cols-3 font-semibold text-center ">
+              <div class="p-2 border border-black">Check if you ever experience the following concerns:</div>
+              <div class="p-2 border border-black">When did it happen?</div>
+              <div class="p-2 border border-black">Does it still bothering you?</div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="sexual_abuse"  name="sexual_abuse" value="yes" {% if info['sexual_abuse'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Sexual abuse</label>
+              </div>
+              <input type="text" name="sexual_abuse_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['sexual_abuse_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="sexual_abuse_bother_yes" name="sexual_abuse_bother" value="yes" disabled {% if info['sexual_abuse_bother'] %}checked{% endif %}>
+                  <label for="sexual_abuse_bother_yes">YES</label>
+                  <input type="radio" id="sexual_abuse_bother_no" name="sexual_abuse_bother" value="no" disabled class="ml-4" {% if info['sexual_abuse_bother'] is not none and not info['sexual_abuse_bother'] %}checked{% endif %}>
+                  <label for="sexual_abuse_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="physical_abuse" name="physical_abuse" value="yes" {% if info['physical_abuse'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Physical abuse</label>
+              </div>
+              <input type="text" name="physical_abuse_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['physical_abuse_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="physical_abuse_bother_yes" name="physical_abuse_bother" value="yes" disabled {% if info['physical_abuse_bother'] %}checked{% endif %}>
+                  <label for="physical_abuse_bother_yes">YES</label>
+                  <input type="radio" id="physical_abuse_bother_no" name="physical_abuse_bother" value="no" disabled class="ml-4" {% if info['physical_abuse_bother'] is not none and not info['physical_abuse_bother'] %}checked{% endif %}>
+                  <label for="physical_abuse_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="verbal_abuse" name="verbal_abuse" value="yes" {% if info['verbal_abuse'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Verbal abuse</label>
+              </div>
+              <input type="text" name="verbal_abuse_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['verbal_abuse_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="verbal_abuse_bother_yes" name="verbal_abuse_bother" value="yes" disabled {% if info['verbal_abuse_bother'] %}checked{% endif %}>
+                  <label for="verbal_abuse_bother_yes">YES</label>
+                  <input type="radio" id="verbal_abuse_bother_no" name="verbal_abuse_bother" value="no" disabled class="ml-4" {% if info['verbal_abuse_bother'] is not none and not info['verbal_abuse_bother'] %}checked{% endif %}>
+                  <label for="verbal_abuse_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="pre_marital_sex" name="pre_marital_sex" value="yes" {% if info['pre_marital_sex'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Pre-marital sex</label>
+              </div>
+              <input type="text" name="pre_marital_sex_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['pre_marital_sex_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="pre_marital_sex_bother_yes" name="pre_marital_sex_bother" value="yes" disabled {% if info['pre_marital_sex_bother'] %}checked{% endif %}>
+                  <label for="pre_marital_sex_bother_yes">YES</label>
+                  <input type="radio" id="pre_marital_sex_bother_no" name="pre_marital_sex_bother" value="no" disabled class="ml-4" {% if info['pre_marital_sex_bother'] is not none and not info['pre_marital_sex_bother'] %}checked{% endif %}>
+                  <label for="pre_marital_sex_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="teenage_pregnancy" name="teenage_pregnancy" value="yes" {% if info['teenage_pregnancy'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Teenage pregnancy</label>
+              </div>
+              <input type="text" name="teenage_pregnancy_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['teenage_pregnancy_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="teenage_pregnancy_bother_yes" name="teenage_pregnancy_bother" value="yes" disabled {% if info['teenage_pregnancy_bother'] %}checked{% endif %}>
+                  <label for="teenage_pregnancy_bother_yes">YES</label>
+                  <input type="radio" id="teenage_pregnancy_bother_no" name="teenage_pregnancy_bother" value="no" disabled class="ml-4" {% if info['teenage_pregnancy_bother'] is not none and not info['teenage_pregnancy_bother'] %}checked{% endif %}>
+                  <label for="teenage_pregnancy_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="abortion" name="abortion" value="yes" {% if info['abortion'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Abortion</label>
+              </div>
+              <input type="text" name="abortion_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['abortion_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="abortion_bother_yes" name="abortion_bother" value="yes" disabled {% if info['abortion_bother'] %}checked{% endif %}>
+                  <label for="abortion_bother_yes">YES</label>
+                  <input type="radio" id="abortion_bother_no" name="abortion_bother" value="no" disabled class="ml-4" {% if info['abortion_bother'] is not none and not info['abortion_bother'] %}checked{% endif %}>
+                  <label for="abortion_bother_no">NO</label>
+              </div>
+          </div>
+
+          <div class="grid grid-cols-3">
+              <div class="p-2 text-[10px] lg:text-[14px] border border-black font-semibold flex items-center gap-2 behavior-row cursor-pointer">
+                  <input type="checkbox" class="behavior-check cursor-pointer" id="extra_marital_affairs" name="extra_marital_affairs" value="yes" {% if info['extra_marital_affairs'] %}checked{% endif %}>
+                  <label class="cursor-pointer">Extra marital affairs</label>
+              </div>
+              <input type="text" name="extra_marital_affairs_when" class="behavior-when p-2 border border-black" disabled
+              value="{{ info['extra_marital_affairs_when'] or '' }}">
+              <div class="text-center p-2 border border-black">
+                  <input type="radio" id="extra_marital_affairs_bother_yes" name="extra_marital_affairs_bother" value="yes" disabled{% if info['extra_marital_affairs_bother'] %}checked{% endif %}>
+                  <label for="extra_marital_affairs_bother_yes"">YES</label>
+                  <input type="radio" id="extra_marital_affairs_bother_no" name="extra_marital_affairs_bother" value="no" disabled class="ml-4" {% if info['extra_marital_affairs_bother'] is not none and not info['extra_marital_affairs_bother'] %}checked{% endif %}>
+                  <label for="extra_marital_affairs_bother_no">NO</label>
+              </div>
+          </div>
+
+          <p id="behavior-warning" class="text-red-600 text-center mt-4 hidden text-sm"></p>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="13">
+
+            <h3 class="text-sm lg:text-xl font-semibold mt-2 mb-4">PREVIOUS PSYCHOLOGICAL CONSULTATIONS</h3>
+
+        <div class="grid grid-cols-2 text-xs lg:text-lg">
+          <label class="font-semibold mt-0">Have you consulted a PSYCHIATRIST before?</label>
+          <div class="radio-group" data-extra="psychiatrist_extra">
+            <label class="border rounded-md p-1 cursor-pointer"><input type="radio" name="psychiatrist_before" value="yes" {% if info['psychiatrist_before'] %}checked{% endif %}> YES</label>
+            <label class="ml-4 border rounded-md p-1 cursor-pointer"><input type="radio" name="psychiatrist_before" value="no" {% if info['psychiatrist_before'] is not none and not info['psychiatrist_before'] %}checked{% endif %}> NO</label>
+          </div>
+        <p id="psychiatrist_error" class="text-red-600 text-sm hidden col-span-2"></p>
+        </div>
+
+        <div id="psychiatrist_extra" class="hidden mt-2">
+          <div class="grid grid-cols-2 text-xs lg:text-lg">
+            <label class="font-semibold text-center">If YES, for what reason?</label>
+            <input type="text" name="psychiatrist_reason" class="border-b border-black" 
+            oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')"
+            value="{{ info['psychiatrist_reason'] or '' }}">
+          <p id="psychiatrist_reason_error" class="text-red-600 text-sm hidden col-span-2"></p>
+          </div>
+
+          <div class="grid grid-cols-2 mb-4 text-xs lg:text-lg">
+            <label class="font-semibold text-center">When?</label>
+            <input type="text" name="psychiatrist_when" class="border-b border-black" 
+            oninput="this.value = this.value.toUpperCase()" value="{{ info['psychiatrist_when'] or '' }}">
+          <p id="psychiatrist_when_error" class="text-red-600 text-sm hidden col-span-2"></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 border-t border-black mt-4 pt-2 text-xs lg:text-lg">
+          <label class="font-semibold mt-2">Have you consulted a PSYCHOLOGIST before?</label>
+          <div class="radio-group" data-extra="psychologist_extra">
+            <label class="border rounded-md p-1 cursor-pointer"><input type="radio" name="psychologist_before" value="yes" {% if info['psychologist_before'] %}checked{% endif %}> YES</label>
+            <label class="ml-4 border rounded-md p-1 cursor-pointer"><input type="radio" name="psychologist_before" value="no" {% if info['psychologist_before'] is not none and not info['psychologist_before'] %}checked{% endif %}> NO</label>
+          </div>
+        <p id="psychologist_error" class="text-red-600 text-sm hidden col-span-2"></p>
+        </div>
+
+        <div id="psychologist_extra" class="hidden mt-2">
+          <div class="grid grid-cols-2 text-xs lg:text-lg">
+            <label class="font-semibold text-center">If YES, for what reason?</label>
+            <input type="text" name="psychologist_reason" class="border-b border-black" 
+            oninput="this.value = this.value.replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')"
+            value="{{ info['psychologist_reason'] or '' }}">
+          <p id="psychologist_reason_error" class="text-red-600 text-sm hidden col-span-2"></p>
+          </div>
+
+          <div class="grid grid-cols-2 mb-4 text-xs lg:text-lg">
+            <label class="font-semibold text-center">When?</label>
+            <input type="text" name="psychologist_when" class="border-b border-black" 
+            oninput="this.value = this.value.toUpperCase()" value="{{ info['psychologist_when'] or '' }}">
+          <p id="psychologist_when_error" class="text-red-600 text-sm hidden col-span-2"></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 border-t border-black mt-4 pt-2 text-xs lg:text-lg">
+          <label class="font-semibold mt-2">Have you consulted a COUNSELOR before?</label>
+          <div class="radio-group" data-extra="counselor_extra">
+            <label class="border rounded-md p-1 cursor-pointer"><input type="radio" name="counselor_before" value="yes" {% if info['counselor_before'] %}checked{% endif %}> YES</label>
+            <label class="ml-4 border rounded-md p-1 cursor-pointer"><input type="radio" name="counselor_before" value="no" {% if info['counselor_before'] is not none and not info['counselor_before'] %}checked{% endif %}> NO</label>
+          </div>
+        <p id="counselor_error" class="text-red-600 text-sm hidden col-span-2"></p>
+        </div>
+
+        <div id="counselor_extra" class="hidden mt-2">
+          <div class="grid grid-cols-2 text-xs lg:text-lg">
+            <label class="font-semibold text-center">If YES, for what reason?</label>
+            <input type="text" name="counselor_reason" class="border-b border-black" 
+            oninput="this.value = this.value.replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')"
+            value="{{ info['counselor_reason'] or '' }}">
+          <p id="counselor_reason_error" class="text-red-600 text-sm hidden col-span-2"></p>
+          </div>
+
+          <div class="grid grid-cols-2 mb-4 text-xs lg:text-lg">
+            <label class="font-semibold text-center">When?</label>
+            <input type="text" name="counselor_when" class="border-b border-black" 
+            oninput="this.value = this.value.toUpperCase()" value="{{ info['counselor_when'] or '' }}">
+          <p id="counselor_when_error" class="text-red-600 text-sm hidden col-span-2"></p>
+          </div>
+        </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="14">
+
+            <h3 class="text-xl lg:text-2xl font-semibold mt-2 mb-4">PERSONAL DESCRIPTION</h3>
+
+        <div class="grid grid-cols-1">
+          <label class="block font-semibold mt-2">Tell something about yourself:</label>
+          <textarea name="personal_description" class="w-full border border-black rounded px-4 py-2" rows="4" oninput="this.value = this.value.toUpperCase()" required
+          value="{{ info['personal_description'] or '' }}">{{ info['personal_description'] or '' }}</textarea>
+          <p id="personal_description_error" class="text-red-600 text-sm hidden mt-1"></p>
+        </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+          <button type="button"
+          class="nextBtn bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Next
+          </button>
+
+          </div>
+        </section>
+
+        <section class="formStep hidden bg-white shadow-xl rounded-lg p-6 md:p-8 lg:p-10" data-step="15">
+
+            <h3 class="text-xl lg:text-2xl font-semibold text-center">DATA PRIVACY CONSENT</h3>
+          <p class="text-xs lg:text-sm font-semibold mb-1 indent-8 text-justify">
+          By accepting this Data Privacy Statement, I (as “Data Subject”) 
+          grant my free, voluntary and unconditional consent to the collection 
+          and processing of all Personal Data to the information database system 
+          of the Central Philippine State University-San Carlos 
+          by whatever means in accordance with Republic Act (R.A.) 10173, 
+          otherwise known as the “Data Privacy Act of 2012” of the Republic of the Philippines, 
+          including its Implementing Rules and Regulations (IRR) as well as all other guidelines 
+          and issuances by the National Privacy Commission (NPC). I also consent to the following:
+          </p>
+          <p class="text-xs lg:text-sm font-semibold mb-1 ml-4 text-justify">
+          1. The University may collect personal data during my application for admission purposes. <br>
+          2. My personal information can be accessed and used only by authorized personnel and officials
+          connected to the University for legitimate purposes only. <br>
+          3. The University may share or disclose some of my personal information to others in its process
+          to deliver necessary services for the stakeholders and the institution, including but not limited to: <br>
+          </p>
+          <p class="text-xs lg:text-sm font-semibold ml-8 mb-2 text-justify">
+              a. web posting of the CPSU-College Admission Test (CPSU-CAT) results. <br>
+              b. web posting of Room Assignments for CPSU-CAT. <br>
+              c. web posting pertinent to admission and enrolment. <br>
+              d. sharing information for accreditation purposes, Accrediting Agency of Chartered Colleges
+              and Universities in the Philippines (AACCUP). <br>
+              e. conducting research or surveys for purposes of institutional development. <br>
+              f. all guidance and counseling-related functions and services. <br>
+              g. other legitimate processes of the University.
+          </p>
+          <p class="text-xs lg:text-sm  font-semibold mb-2 indent-8 text-justify">
+              I hereby declare that all the information provided during my application are true 
+              and accurate to the best of my knowledge. I hereby attest to the completeness 
+              and accuracy of all the information that I have provided.
+          </p>
+          <p class="text-xs lg:text-sm  font-semibold indent-8 text-justify">
+              I am fully aware that any false information provided may lead to my automatic dismissal 
+              and I will comply with all the terms and conditions set by your University.
+          </p>
+
+            <div class="mt-4">
+                <label>
+                    <input type="checkbox" name="consent" id="consent" {% if info['consent'] %}checked{% endif %}> I agree to the Data Privacy Statement.
+                </label>
+                <p id="consent_error" class="text-red-600 text-sm hidden mt-1"></p>
+            </div>
+
+          <div class="flex justify-between mt-6">
+          <button type="button"
+          class="prevBtn bg-gray-300 px-6 py-2 rounded">
+          Previous
+          </button>
+
+          <button type="submit"
+          class="bg-[#166D3B] text-white px-6 py-2 rounded hover:bg-green-700">
+          Submit
+          </button>
+
+          </div>
+        </section>
+
+    </form>
+  </main>
+</div>
+
+<script>
+const steps = document.querySelectorAll(".formStep");
+const nextBtns = document.querySelectorAll(".nextBtn");
+const prevBtns = document.querySelectorAll(".prevBtn");
+const form = document.getElementById("multiStepForm");
+const parentStatusRadios = document.querySelectorAll('input[name="parent_status"]');
+const anotherFamilyCheckboxes = document.querySelectorAll('input[name="another_family"]');
+
+let currentStep = 0;
+const totalSteps = steps.length;
+
+const studentId = "{{ student[0] }}";
+const storageKey = "studentInventory_" + studentId;
+
+// Show step
+function showStep(step){
+    steps.forEach((s,i)=>{
+        if(i === step){
+            s.classList.remove("hidden");
+        } else {
+            s.classList.add("hidden");
+        }
+    });
+
+    updateProgress(step);
+
+    // Show/hide Next/Submit buttons
+    steps[step].querySelectorAll(".nextBtn").forEach(btn=>{
+        btn.style.display = (step === totalSteps-1) ? "none" : "inline-block";
+    });
+    steps[step].querySelectorAll('[type="submit"]').forEach(btn=>{
+        btn.style.display = (step === totalSteps-1) ? "inline-block" : "none";
+    });
+}
+
+// Progress bar
+function createProgress(){
+    const container = document.getElementById("progressBarContainer");
+    container.innerHTML = "";
+    for(let i=0;i<totalSteps;i++){
+        const step = document.createElement("div");
+        step.className = "flex justify-center text-center p-1 border rounded mx-1 text-[10px] font-semibold";
+        step.innerText = (i+1);
+        if(i <= currentStep) step.classList.add("bg-[#166D3B]","text-white");
+        container.appendChild(step);
+    }
+}
+
+function updateProgress(step){
+    const bars = document.querySelectorAll("#progressBarContainer div");
+    bars.forEach((bar,i)=>{
+        if(i <= step) bar.classList.add("bg-[#166D3B]","text-white");
+        else bar.classList.remove("bg-[#166D3B]","text-white");
+    });
+}
+
+function validateStep(step){
+
+    const inputs = steps[step].querySelectorAll("input,select,textarea");
+
+    // 🔥 SPECIAL VALIDATION FOR STEP 7
+    if(step === 7){
+
+        const checkedReasons = steps[step].querySelectorAll('input[name="enroll_reasons[]"]:checked');
+        const otherReason = steps[step].querySelector('input[name="other_reason"]').value.trim();
+        const errorMsg = document.getElementById("enrollCpsuError");
+
+        if(checkedReasons.length === 0 && otherReason === ""){
+            errorMsg.classList.remove("hidden");
+            return false;
+        } else {
+            errorMsg.classList.add("hidden");
+        }
+    }
+
+    if(step === 8){
+
+        const checkedSchools = steps[step].querySelectorAll('input[name="other_school[]"]:checked');
+        const otherSchool = steps[step].querySelector('input[name="other_school_other"]').value.trim();
+        const errorMsg = document.getElementById("schoolConsiderError");
+
+        if(checkedSchools.length === 0 && otherSchool === ""){
+            errorMsg.classList.remove("hidden");
+            return false;
+        } else {
+            errorMsg.classList.add("hidden");
+        }
+    }
+
+    if(step >= 9 && step <= 12){
+
+        const rows = steps[step].querySelectorAll(".behavior-check");
+        const errorMsg = steps[step].querySelector("#behavior-warning");
+
+        let hasError = false;
+
+        for(let checkbox of rows){
+
+            if(checkbox.checked){
+
+                const row = checkbox.closest(".grid");
+                const bother = row.querySelector('input[type="radio"]:checked');
+
+                if(!bother){
+                    hasError = true;
+                    break;
+                }
+            }
+        }
+        if(hasError){
+            errorMsg.textContent = "Please answer 'Does it still bother you?' for checked items.";
+            errorMsg.classList.remove("hidden");
+            return false;
+        } else {
+            errorMsg.classList.add("hidden");
+        }
+    }
+
+    // 🔥 STEP 13 VALIDATION (Consultations)
+    if(step === 13){
+
+        const consultations = [
+            "psychiatrist",
+            "psychologist",
+            "counselor"
+        ];
+
+        let hasError = false;
+
+        consultations.forEach(type => {
+
+            const stepEl = steps[step];
+
+            const radios = stepEl.querySelectorAll(`input[name="${type}_before"]`);
+            const selected = stepEl.querySelector(`input[name="${type}_before"]:checked`);
+
+            const error = stepEl.querySelector(`#${type}_error`);
+            const reason = stepEl.querySelector(`input[name="${type}_reason"]`);
+            const when = stepEl.querySelector(`input[name="${type}_when"]`);
+            const reasonError = stepEl.querySelector(`#${type}_reason_error`);
+            const whenError = stepEl.querySelector(`#${type}_when_error`);
+
+            // ❌ No YES/NO selected
+            if(!selected){
+                error.textContent = "Please select Yes or No.";
+                error.classList.remove("hidden");
+                hasError = true;
+            } else {
+                error.classList.add("hidden");
+            }
+
+            // ✅ If YES → require reason + when
+            if(selected && selected.value === "yes"){
+
+                if(!reason.value.trim()){
+                    reasonError.textContent = "Please enter the reason.";
+                    reasonError.classList.remove("hidden");
+                    hasError = true;
+                } else {
+                    reasonError.classList.add("hidden");
+                }
+
+                if(!when.value.trim()){
+                    whenError.textContent = "Please enter when.";
+                    whenError.classList.remove("hidden");
+                    hasError = true;
+                } else {
+                    whenError.classList.add("hidden");
+                }
+
+            } else {
+                // 🔄 If NO → clear errors
+                reasonError.classList.add("hidden");
+                whenError.classList.add("hidden");
+            }
+
+        });
+
+        if(hasError) return false;
+    }
+
+    if(step === 14){
+        const textarea = steps[step].querySelector('textarea[name="personal_description"]');
+        const errorMsg = document.getElementById("personal_description_error");
+
+        if(!textarea.value.trim()){
+            errorMsg.textContent = "Please tell something about yourself.";
+            errorMsg.classList.remove("hidden");
+            return false;
+        } else {
+            errorMsg.classList.add("hidden");
+        }
+    }
+
+    if(step === 15){
+
+        const consent = document.getElementById("consent");
+        const errorMsg = document.getElementById("consent_error");
+
+        if(!consent.checked){
+            errorMsg.textContent = "You must agree before submitting.";
+            errorMsg.classList.remove("hidden");
+            return false;
+        } else {
+            errorMsg.classList.add("hidden");
+        }
+    }
+
+    // 🔥 NORMAL VALIDATION
+    for(let input of inputs){
+
+        if(input.required){
+
+            // radio validation
+            if(input.type === "radio"){
+                if(!steps[step].querySelector(`input[name="${input.name}"]:checked`)){
+                    input.classList.add("border-red-500");
+                    return false;
+                }
+            }
+
+            // normal input validation
+            else if(!input.value){
+                input.focus();
+                input.classList.add("border-red-500");
+                return false;
+            }
+        }
+
+        input.classList.remove("border-red-500");
+    }
+
+    return true;
+}
+
+document.querySelectorAll(".school-option").forEach(label => {
+    const checkbox = label.querySelector("input[type='checkbox']");
+
+    function updateStyle() {
+        if (checkbox.checked) {
+            label.classList.add("bg-green-100", "border-green-500");
+        } else {
+            label.classList.remove("bg-green-100", "border-green-500");
+        }
+    }
+
+    // Run on load (important if auto-fill or back navigation)
+    updateStyle();
+
+    // Listen for change
+    checkbox.addEventListener("change", updateStyle);
+});
+
+document.querySelectorAll(".enroll-option").forEach(label => {
+    const checkbox = label.querySelector("input[type='checkbox']");
+
+    function updateStyle() {
+        if (checkbox.checked) {
+            label.classList.add("bg-green-100", "border-green-500");
+        } else {
+            label.classList.remove("bg-green-100", "border-green-500");
+        }
+    }
+
+    // Run on load (important if auto-fill or back navigation)
+    updateStyle();
+
+    // Listen for change
+    checkbox.addEventListener("change", updateStyle);
+});
+
+document.querySelectorAll(".behavior-check").forEach(checkbox => {
+
+    checkbox.addEventListener("change", () => {
+
+        const row = checkbox.closest(".grid"); // parent row
+        const whenInput = row.querySelector(".behavior-when");
+        const botherRadios = row.querySelectorAll('input[type="radio"]');
+
+        if(checkbox.checked){
+            // ENABLE
+            whenInput.disabled = false;
+            botherRadios.forEach(r => {
+                r.disabled = false;
+                r.setAttribute("required", "true"); // 🔥 required
+            });
+
+        }else{
+            // DISABLE + CLEAR
+            whenInput.value = "";
+            whenInput.disabled = true;
+
+            botherRadios.forEach(r => {
+                r.checked = false;
+                r.disabled = true;
+                r.removeAttribute("required");
+            });
+        }
+    });
+
+    // 🔥 INITIAL STATE on page load
+    checkbox.dispatchEvent(new Event("change"));
+});
+
+document.querySelectorAll(".behavior-row").forEach(row => {
+    const checkbox = row.querySelector(".behavior-check");
+
+    // click whole row
+    row.addEventListener("click", function(e) {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "LABEL") return;
+
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event("change"));
+    });
+
+    // highlight + enable inputs
+    checkbox.addEventListener("change", function() {
+        const whenInput = row.querySelector(".behavior-when");
+        const radios = row.querySelectorAll("input[type='radio']");
+
+        if (checkbox.checked) {
+            row.classList.add("bg-green-100", "border-green-500");
+            whenInput.disabled = false;
+            radios.forEach(r => r.disabled = false);
+        } else {
+            row.classList.remove("bg-green-100", "border-green-500");
+            whenInput.disabled = true;
+            whenInput.value = "";
+            radios.forEach(r => {
+                r.disabled = true;
+                r.checked = false;
+            });
+        }
+    });
+});
+
+// Next button
+nextBtns.forEach(btn=>{
+    btn.addEventListener("click",()=>{
+
+        if(!validateStep(currentStep)) return;
+
+        // STEP 5 LOGIC (Course Personal Choice)
+        if(currentStep === 5){
+
+            const choice = document.querySelector('input[name="course_personal_choice"]:checked');
+
+            if(!choice){
+                document.getElementById("error-course-choice").classList.remove("hidden");
+                return;
+            }
+
+            if(choice.value === "yes"){
+                currentStep = 7;
+
+                // 🔥 remove required from step 6
+                document.querySelectorAll('[data-step="6"] input').forEach(input=>{
+                    input.removeAttribute("required");
+                });
+
+            }else{
+                currentStep = 6;
+
+                // 🔥 add required back
+                document.querySelectorAll('[data-step="6"] input').forEach(input=>{
+                    input.setAttribute("required", "true");
+                });
+            }
+
+        } 
+        else {
+            currentStep++;
+        }
+
+        if(currentStep < totalSteps){
+            showStep(currentStep);
+            saveForm();
+        }
+
+    });
+});
+
+// Previous button
+prevBtns.forEach(btn=>{
+    btn.addEventListener("click",()=>{
+
+        if(currentStep === 7){
+            const choice = document.querySelector('input[name="course_personal_choice"]:checked');
+
+            if(choice && choice.value === "yes"){
+                currentStep = 5; // skip 6 when going back
+            }else{
+                currentStep = 6;
+            }
+        }
+        else{
+            currentStep--;
+        }
+
+        if(currentStep >= 0){
+            showStep(currentStep);
+            saveForm();
+        }
+
+    });
+});
+
+function updateAnotherFamilyState() {
+
+    const selected = document.querySelector('input[name="parent_status"]:checked');
+
+    if(!selected) return;
+
+    const allowAnotherFamily =
+        selected.value === "legally_separated" ||
+        selected.value === "separated";
+
+    anotherFamilyCheckboxes.forEach(cb => {
+
+        cb.disabled = !allowAnotherFamily;
+
+        if(!allowAnotherFamily){
+            cb.checked = false;
+        }
+
+    });
+
+}
+
+parentStatusRadios.forEach(radio => {
+    radio.addEventListener("change", updateAnotherFamilyState);
+});
+
+// Auto-save
+function saveForm(){
+    const data = {};
+    const inputs = form.querySelectorAll("input,select,textarea");
+
+    inputs.forEach(input=>{
+
+        if(input.type === "radio"){
+            if(input.checked){
+                data[input.name] = input.value;
+            }
+        }
+
+        else if(input.type === "checkbox"){
+            if(!data[input.name]) data[input.name] = [];
+            if(input.checked){
+                data[input.name].push(input.value);
+            }
+        }
+
+        else{
+            data[input.name] = input.value;
+        }
+    });
+
+    data.currentStep = currentStep;
+    localStorage.setItem(storageKey, JSON.stringify(data));
+}
+
+// Load saved form
+function loadForm(){
+
+    const hasBackendData = "{{ 'true' if info else 'false' }}" === "true";
+
+    // ❗ If backend already has data → DO NOT override
+    if(hasBackendData){
+        return;
+    }
+
+    const saved = localStorage.getItem(storageKey);
+    if(!saved) return;
+
+    const data = JSON.parse(saved);
+
+    Object.keys(data).forEach(key => {
+
+        const fields = form.querySelectorAll(`[name="${key}"]`);
+
+        fields.forEach(field => {
+
+            if(field.type === "radio"){
+                field.checked = data[key] === field.value;
+            }
+
+            else if(field.type === "checkbox"){
+                if(Array.isArray(data[key])){
+                    field.checked = data[key].includes(field.value);
+                }
+            }
+
+            else{
+                field.value = data[key];
+            }
+
+        });
+    });
+
+    document.querySelectorAll(".behavior-check, .school-option input[type='checkbox'], .enroll-option input[type='checkbox']").forEach(el => {
+        el.dispatchEvent(new Event("change"));
+    });
+    
+    // Restore step
+    if(data.currentStep !== undefined && data.currentStep < totalSteps){
+        currentStep = data.currentStep;
+    } else {
+        currentStep = 0;
+    }
+}
+
+const consultations = ["psychiatrist", "psychologist", "counselor"];
+
+consultations.forEach(type => {
+
+    const radios = document.querySelectorAll(`input[name="${type}_before"]`);
+    const extraDiv = document.getElementById(`${type}_extra`);
+    const reason = document.querySelector(`input[name="${type}_reason"]`);
+    const when = document.querySelector(`input[name="${type}_when"]`);
+
+    radios.forEach(radio => {
+
+        radio.addEventListener("change", () => {
+
+            if(radio.value === "yes"){
+                // ✅ SHOW
+                extraDiv.classList.remove("hidden");
+
+                // ✅ MAKE REQUIRED
+                reason.setAttribute("required", "true");
+                when.setAttribute("required", "true");
+
+            } else {
+                // ❌ HIDE
+                extraDiv.classList.add("hidden");
+
+                // ❌ REMOVE REQUIRED
+                reason.removeAttribute("required");
+                when.removeAttribute("required");
+
+                // 🔄 CLEAR VALUES
+                reason.value = "";
+                when.value = "";
+            }
+
+        });
+
+    });
+
+});
+
+// Listen to input changes
+form.querySelectorAll("input,select,textarea").forEach(input=>{
+    input.addEventListener("change", saveForm);
+});
+
+form.addEventListener("submit", (e)=>{
+
+    // 🔥 FIRST remove required from hidden steps
+    steps.forEach((stepEl, index)=>{
+        if(index !== currentStep){
+            stepEl.querySelectorAll("input,select,textarea").forEach(input=>{
+                input.removeAttribute("required");
+            });
+        }
+    });
+
+    // 🔥 THEN validate
+    if(!validateStep(currentStep)){
+        e.preventDefault();
+        return;
+    }
+
+    localStorage.removeItem(storageKey);
+});
+
+// Initialize
+loadForm();
+
+document.querySelectorAll(".behavior-check").forEach(cb => {
+    cb.dispatchEvent(new Event("change"));
+});
+
+consultations.forEach(type => {
+    const selected = document.querySelector(`input[name="${type}_before"]:checked`);
+    if(selected){
+        selected.dispatchEvent(new Event("change"));
+    }
+});
+
+createProgress();
+showStep(currentStep);
+
+</script>
+
+</body>
+</html>

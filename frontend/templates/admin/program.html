@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROGRAM</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    .selected-category {
+        background-color: #dcfce7;
+        border-color: #166D3B;
+    }
+    .selected-category .checkboxIcon {
+        content: "☑";
+    }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+    <!-- MAIN CONTENT -->
+    <div class="flex flex-1">
+        <main class="ml-0 lg:ml-56 mr-0 lg:mr-2 flex-1 bg-[#f6ebcd] p-3 mb-0 lg:mb-16 mt-32 lg:mt-16 h-fit">
+    <div class="bg-white mb-16 p-3 shadow-md rounded-md border border-[#166D3B] ">
+        <div class="flex justify-between">
+            <h1 class="text-2xl font-bold">PROGRAM LIST</h1>
+
+{% if is_super_admin %}
+<form method="GET" action="{{ url_for('admin.program') }}" class="flex items-center ml-4">
+    <label class="text-black font-bold mr-2">Campus:</label>
+    <select name="campus" class="border border-[#166D3B] rounded-md px-3 py-2 text-sm h-[38px]"
+            onchange="this.form.submit()">
+        <option value="">All Campuses</option>
+        {% for c in campuses %}
+            <option value="{{ c.campus_name }}" {% if selected_campus == c.campus_name %}selected{% endif %}>
+                {{ c.campus_name }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %}
+
+            <button type="button" onclick="openProgramPopup()"
+                    class="bg-[#166D3B] text-white px-6 py-2 rounded-lg hover:bg-green-700 font-semibold">
+                Add Program
+            </button>
+        </div>
+
+            <div id="addProgramPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden items- justify-center z-50">
+                <div class="bg-white rounded-2xl p-6 w-[510px] relative shadow-lg">
+                    <button type="button" onclick="closeProgramPopup()" 
+                            class="absolute top-4 right-4 text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-full font-bold">
+                        X
+                    </button>
+
+                    <h2 class="text-xl font-bold mb-4">Add New Program</h2>
+
+                    <form id="addProgramForm"
+                        action="{{ url_for('admin.addProgram') }}"
+                        method="POST"
+                        class="flex flex-col gap-4">
+
+                        <input type="text" name="program_name" placeholder="Program Name" required
+                            class="w-full p-2 border border-[#166D3B] rounded-lg bg-white"
+                            oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')">
+
+{% if is_super_admin %}
+    <!-- Super admin: campus based on selected campus -->
+    <select name="campus"
+            required
+            class="w-1/2 p-2 border border-[#166D3B] rounded-lg bg-white">
+
+        <option value="" disabled {% if not selected_campus %}selected{% endif %}>
+            Select Campus
+        </option>
+
+        {% for c in campuses %}
+            <option value="{{ c.campus_name }}" {% if selected_campus == c.campus_name %}selected{% endif %}>
+                {{ c.campus_name }}
+            </option>
+        {% endfor %}
+    </select>
+
+{% else %}
+    <!-- Sub admin: fixed campus -->
+    <input type="hidden" name="campus" value="{{ admin_campus }}">
+{% endif %}
+
+                        <div class="relative w-full">
+                            <label class="font-semibold mb-1 block">Career Category</label>
+
+                            <div class="flex justify-between">
+                                <div id="categorySelectBox"
+                                    class="border border-[#166D3B] rounded-lg p-2 bg-white cursor-pointer flex justify-between items-center w-[150px]">
+                                    <span id="categorySelectedText">Select category</span>
+                                    <span class="flex items-center gap-2">
+                                        <span>▼</span>
+                                    </span>
+                                </div>
+                                <span id="categoryHelpIcon"
+                                        class="bg-gray-200 text-gray-700 font-bold w-10 h-10 flex items-center justify-center rounded-full cursor-pointer hover:bg-gray-300"
+                                        title="Click to see category info">?</span>
+                            </div>
+
+                            <div id="categoryOptionsPopup"
+                                class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+                                <div class="bg-white rounded-2xl p-6 w-1/2 shadow-lg max-h-[80vh] overflow-y-auto">
+                                    <div class="flex justify-between mb-4">
+                                        <h3 class="text-lg font-bold">Select Career Category</h3>
+                                        <button type="button" onclick="closeCategoryPopup()"
+                                                class="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700">
+                                            X
+                                        </button>
+                                    </div>
+                                    <ul id="categoryOptionsList" class="space-y-2 max-h-[60vh] overflow-y-auto">
+                                        <li data-value="A" data-desc="Arts, A/V Technology and Communications: Interest in creative or performing arts, communication or A/V technology."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>A - Arts, A/V Technology and Communications</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="B" data-desc="Science, Technology, Engineering and Mathematics: Interest in problem-solving, analyzing and applying scientific knowledge."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>B - Science, Technology, Engineering and Mathematics</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="C" data-desc="Plants, Agriculture and Natural Resources: Interest in outdoor activities involving plants and nature."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>C - Plants, Agriculture and Natural Resources</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="D" data-desc="Law, Public Safety, Corrections and Security: Interest in legal and protective services for people and property."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>D - Law, Public Safety, Corrections and Security</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="E" data-desc="Mechanical Manufacturing: Interest in applying mechanical principles using machines and tools."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>E - Mechanical Manufacturing</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="F" data-desc="Industrial Manufacturing: Interest in structured activities in a factory or industrial setting."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>F - Industrial Manufacturing</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="G" data-desc="Business, Management and Administration: Interest in business organization and leadership."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>G - Business, Management and Administration</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="H" data-desc="Marketing, Sales and Service: Interest in persuasion and promotional techniques."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>H - Marketing, Sales and Service</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="I" data-desc="Hospitality and Tourism: Interest in travel planning, hotels, restaurants, and recreation."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>I - Hospitality and Tourism</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="J" data-desc="Human Services: Interest in helping others with mental, social, or career needs."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>J - Human Services</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="K" data-desc="Government and Public Administration: Interest in working in government functions."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>K - Government and Public Administration</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="L" data-desc="Architecture, Design and Construction: Interest in planning, designing, and building structures."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>L - Architecture, Design and Construction</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="M" data-desc="Education and Training: Interest in teaching, training, and managing educational services."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>M - Education and Training</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="N" data-desc="Finance, Banking, Investments and Insurance: Interest in financial planning and banking services."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>N - Finance, Banking, Investments and Insurance</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="O" data-desc="Health Sciences, Care and Prevention: Interest in healthcare and medical research."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>O - Health Sciences, Care and Prevention</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="P" data-desc="Information Technology (IT): Interest in computer systems, software, and tech support."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>P - Information Technology (IT)</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="Q" data-desc="Animals, Agriculture and Natural Resources: Interest in working with and caring for animals."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>Q - Animals, Agriculture and Natural Resources</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                        <li data-value="R" data-desc="Transportation, Distribution and Logistics: Interest in transportation and supply chain management."
+                                            class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                            <div class="flex items-center gap-2">
+                                                <span class="checkboxIcon text-lg">☐</span>
+                                                <span>R - Transportation, Distribution and Logistics</span>
+                                            </div>
+                                                <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                                        </li>
+                                    </ul>
+                                        <div id="categoryOptionHelpPopup"
+                                            class="hidden absolute bg-white border border-gray-300 p-3 rounded shadow-lg z-50 w-80 text-sm">
+                                            <span id="categoryOptionHelpText"></span>
+                                            <button type="button" onclick="closeCategoryOptionHelp()"
+                                                    class="absolute top-1 right-1 text-gray-500 hover:text-gray-800 font-bold">✖</button>
+                                        </div>
+                                </div>
+                            </div>
+
+                            <div id="categoryHelpPopup"
+                                class="hidden absolute top-6 w-[440px] p-4 bg-white border border-black rounded shadow-lg">
+                                <p id="categoryHelpText" class="text-black text-sm">Select a category where the Program is belong in career letters.</p>
+                                <button type="button" onclick="closeCategoryHelp()"
+                                        class="absolute top-3 right-2 text-gray-500 hover:text-gray-800 font-bold">✖</button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="category_letters" id="categoryLetters">
+                        <input type="hidden" name="category_descriptions" id="categoryDescriptions">
+
+                        <div class="flex items-center gap-3">
+                            <label class="font-semibold">Program Color:</label>
+                            
+                            <input type="color"
+                                name="color"
+                                value="#166D3B"
+                                class="w-14 h-10 border rounded cursor-pointer">
+
+                            <span class="text-sm text-gray-500">Pick a color for this program</span>
+                        </div>
+
+                        <button type="submit"
+                                class="bg-[#166D3B] text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold">
+                            Add Program
+                        </button>
+                    </form>
+                </div>
+            </div>
+<div id="programContainer">
+{% include 'admin/_program_rows.html' %}
+</div>
+    
+<div id="colorModal"
+     class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+     
+    <div class="bg-white rounded-xl p-6 w-72 shadow-xl text-center">
+        <h3 class="text-lg font-semibold mb-4 text-[#166D3B]">
+            Select Program Color
+        </h3>
+
+        <input type="color"
+               id="colorPicker"
+               class="w-10 h-10 border rounded cursor-pointer mx-auto">
+
+        <div class="mt-6 flex justify-center gap-3">
+            <button onclick="closeColorModal()"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-400 rounded border">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="editProgramModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-[510px] relative shadow-lg">
+
+        <button onclick="closeEditProgramModal()"
+            class="absolute top-4 right-4 text-white bg-red-600 px-3 py-1 rounded-full">
+            X
+        </button>
+
+        <h2 class="text-xl font-bold mb-4">Edit Program</h2>
+        <div id="editProgramMessage" 
+            class="hidden mb-2 p-2 text-sm rounded border text-white bg-green-600">
+        </div>
+        <form id="editProgramForm"method="POST"
+              class="flex flex-col gap-4">
+
+            <input type="hidden" name="program_id" id="editProgramId">
+
+            <!-- PROGRAM NAME -->
+            <input type="text" name="program_name" id="editProgramName" required
+                class="w-full p-2 border border-[#166D3B] rounded-lg"
+                oninput="this.value = this.value.toUpperCase()">
+
+            <!-- CATEGORY -->
+            <div class="relative w-full">
+                <label class="font-semibold">Career Category</label>
+
+                <div class="flex justify-between">
+                    <div id="editCategorySelectBox"
+                        class="border border-[#166D3B] rounded-lg p-2 cursor-pointer w-[150px] flex justify-between">
+                        <span id="editCategorySelectedText">Select category</span>
+                        <span>▼</span>
+                    </div>
+
+                    <!-- COLOR -->
+                    <div class="flex items-center font-semibold gap-3">
+                        <label>Program Color:</label>
+                        <input type="color" id="editProgramColor" name="color">
+                    </div>
+                </div>
+
+                <!-- CATEGORY POPUP -->
+                <div id="editCategoryOptionsPopup"
+                    class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+                    <div class="bg-white rounded-2xl p-6 w-1/2 max-h-[80vh] overflow-y-auto">
+
+                        <div class="flex justify-between mb-4">
+                            <h3 class="font-bold">Select Category</h3>
+                            <button onclick="closeEditCategoryPopup()" type="button"
+                                class="bg-red-600 text-white px-3 py-1 rounded-full">X</button>
+                        </div>
+
+                        <!-- COPY LIST -->
+                        <ul id="editCategoryOptionsList" class="space-y-2">
+                            <li data-value="A" data-desc="Arts, A/V Technology and Communications: Interest in creative or performing arts, communication or A/V technology."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>A - Arts, A/V Technology and Communications</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="B" data-desc="Science, Technology, Engineering and Mathematics: Interest in problem-solving, analyzing and applying scientific knowledge."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>B - Science, Technology, Engineering and Mathematics</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="C" data-desc="Plants, Agriculture and Natural Resources: Interest in outdoor activities involving plants and nature."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>C - Plants, Agriculture and Natural Resources</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="D" data-desc="Law, Public Safety, Corrections and Security: Interest in legal and protective services for people and property."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>D - Law, Public Safety, Corrections and Security</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="E" data-desc="Mechanical Manufacturing: Interest in applying mechanical principles using machines and tools."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>E - Mechanical Manufacturing</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="F" data-desc="Industrial Manufacturing: Interest in structured activities in a factory or industrial setting."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>F - Industrial Manufacturing</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="G" data-desc="Business, Management and Administration: Interest in business organization and leadership."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>G - Business, Management and Administration</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="H" data-desc="Marketing, Sales and Service: Interest in persuasion and promotional techniques."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>H - Marketing, Sales and Service</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="I" data-desc="Hospitality and Tourism: Interest in travel planning, hotels, restaurants, and recreation."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>I - Hospitality and Tourism</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="J" data-desc="Human Services: Interest in helping others with mental, social, or career needs."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>J - Human Services</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="K" data-desc="Government and Public Administration: Interest in working in government functions."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>K - Government and Public Administration</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="L" data-desc="Architecture, Design and Construction: Interest in planning, designing, and building structures."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>L - Architecture, Design and Construction</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="M" data-desc="Education and Training: Interest in teaching, training, and managing educational services."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>M - Education and Training</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="N" data-desc="Finance, Banking, Investments and Insurance: Interest in financial planning and banking services."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>N - Finance, Banking, Investments and Insurance</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="O" data-desc="Health Sciences, Care and Prevention: Interest in healthcare and medical research."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>O - Health Sciences, Care and Prevention</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="P" data-desc="Information Technology (IT): Interest in computer systems, software, and tech support."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>P - Information Technology (IT)</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="Q" data-desc="Animals, Agriculture and Natural Resources: Interest in working with and caring for animals."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>Q - Animals, Agriculture and Natural Resources</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                            <li data-value="R" data-desc="Transportation, Distribution and Logistics: Interest in transportation and supply chain management."
+                                class="p-2 border border-gray-300 rounded hover:bg-[#dcfce7] cursor-pointer flex justify-between items-center relative">
+                                <div class="flex items-center gap-2">
+                                    <span class="checkboxIcon text-lg">☐</span>
+                                    <span>R - Transportation, Distribution and Logistics</span>
+                                </div>
+                                    <span class="categoryInfoIcon bg-gray-200 text-gray-700 font-bold w-5 h-5 flex items-center justify-center rounded-full ml-2 cursor-pointer hover:bg-gray-300">?</span>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- HIDDEN -->
+            <input type="hidden" name="category_letters" id="editCategoryLetters">
+            <input type="hidden" name="category_descriptions" id="editCategoryDescriptions">
+
+            <button type="submit"
+                class="bg-[#166D3B] text-white px-4 py-2 rounded-lg">
+                Update Program
+            </button>
+
+        </form>
+    </div>
+</div>
+
+<!-- 🗑 Delete Program Modal -->
+<div id="deleteProgramModal"
+     class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+
+    <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">
+            Delete Program
+        </h3>
+
+        <p class="text-sm text-gray-600 mb-4">
+            Delete this program? This action cannot be undone.
+        </p>
+
+        <p class="font-semibold text-red-600 mb-6" id="deleteProgramName"></p>
+
+        <div class="flex justify-end gap-3">
+            <button
+                onclick="closeDeleteProgramModal()"
+                class="px-4 py-2 rounded border text-gray-700 hover:bg-gray-100">
+                Cancel
+            </button>
+
+            <button
+                onclick="confirmDeleteProgram()"
+                class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+let selectedProgram = null;
+let programToDelete = null;
+
+const categorySelectBox = document.getElementById("categorySelectBox");
+const categoryOptionsPopup = document.getElementById("categoryOptionsPopup");
+const categorySelectedText = document.getElementById("categorySelectedText");
+const categoryLetterInput = document.getElementById("categoryLetter");
+const categoryDescriptionInput = document.getElementById("categoryDescription");
+const helpIcon = document.getElementById("categoryHelpIcon");
+const helpPopup = document.getElementById("categoryHelpPopup");
+const helpText = document.getElementById("categoryHelpText");
+const optionhelpPopup = document.getElementById("categoryOptionHelpPopup");
+const optionhelpText = document.getElementById("categoryOptionHelpText");
+const selectedCategories = new Map(); // letter -> description
+const categoryLettersInput = document.getElementById("categoryLetters");
+const categoryDescriptionsInput = document.getElementById("categoryDescriptions");
+const programNameInput = document.querySelector("input[name='program_name']");
+const categoryKeywords = {
+    "A": [
+        "arts", "fine arts", "visual arts", "performing arts",
+        "music", "dance", "theater", "drama",
+        "communication", "broadcasting", "journalism",
+        "multimedia", "film", "tv", "radio", "technology"
+    ],
+
+    "B": [
+        "scientific", "education",
+        "technology", "engineering",
+        "mathematics", "math",
+        "physics", "chemistry", "biology",
+        "stem", "problem-solving"
+    ],
+
+    "C": [
+        "agriculture", "agribusiness",
+        "crop", "plant", "horticulture",
+        "forestry", "environment",
+        "natural resource", "nature"
+    ],
+
+    "D": [
+        "law", "legal",
+        "criminology", "criminal justice",
+        "public safety", "police",
+        "corrections", "security",
+        "forensics"
+    ],
+
+    "E": [
+        "mechanical", "machinery",
+        "manufacturing", "machine",
+        "automotive", "mechatronics",
+        "industrial mechanics"
+    ],
+
+    "F": [
+        "industrial", "factory",
+        "production", "operations",
+        "process", "plant operations"
+    ],
+
+    "G": [
+        "business", "management",
+        "administration", "entrepreneur",
+        "entrepreneurship",
+        "office administration",
+        "organizational"
+    ],
+
+    "H": [
+        "marketing", "sales",
+        "advertising", "promotion",
+        "customer service",
+        "retail", "merchandising"
+    ],
+
+    "I": [
+        "hospitality", "tourism",
+        "hotel", "restaurant",
+        "culinary", "food service",
+        "travel", "event management"
+    ],
+
+    "J": [
+        "human services", "social work",
+        "counseling", "psychology",
+        "community development",
+        "public service", "crim"
+    ],
+
+    "K": [
+        "government", "public administration",
+        "political science",
+        "public policy",
+        "local government",
+        "public management"
+    ],
+
+    "L": [
+        "architecture", "architectural",
+        "construction", "civil engineering",
+        "building technology",
+        "design", "urban planning"
+    ],
+
+    "M": [
+        "education", "teaching",
+        "teacher", "elementary",
+        "secondary", "training",
+        "educational management",
+        "pedagogy"
+    ],
+
+    "N": [
+        "finance", "financial",
+        "accounting", "banking",
+        "investment", "insurance",
+        "economics", "taxation"
+    ],
+
+    "O": [
+        "health", "healthcare",
+        "nursing", "medical",
+        "medicine", "clinical",
+        "care", "public health",
+        "midwifery"
+    ],
+
+    "P": [
+        "information technology",
+        "computer", "computing",
+        "software", "programming",
+        "web development",
+        "networking", "cybersecurity",
+        "data science", "technology"
+    ],
+
+    "Q": [
+        "animal", "veterinary",
+        "animal science",
+        "livestock",
+        "animal husbandry",
+        "poultry", "agribusiness"
+    ],
+
+    "R": [
+        "transportation", "logistics",
+        "supply chain",
+        "distribution",
+        "shipping", "freight",
+        "maritime", "aviation",
+        "warehouse"
+    ]
+};
+
+function openProgramPopup() {
+    const popup = document.getElementById("addProgramPopup");
+    popup.classList.remove("hidden");
+    popup.classList.add("flex", "items-center", "justify-center");
+}
+
+function closeProgramPopup() {
+    const popup = document.getElementById("addProgramPopup");
+    popup.classList.add("hidden");
+    popup.classList.remove("flex", "items-center", "justify-center");
+}
+
+const addProgramPopup = document.getElementById("addProgramPopup");
+addProgramPopup.addEventListener("click", (e) => {
+    const content = addProgramPopup.querySelector("div.bg-white");
+    if (!content.contains(e.target)) {
+        closeProgramPopup();
+    }
+});
+
+document.getElementById("addProgramForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    if (selectedCategories.size === 0) {
+        alert("Please select at least one career category.");
+        return;
+    }
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeProgramPopup();
+            form.reset();
+            selectedCategories.clear();
+            reloadProgramList();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(() => alert("Something went wrong."));
+});
+
+function reloadProgramList() {
+    fetch("/admin/program?ajax=1")
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById("programContainer").innerHTML = html;
+            bindProgramEvents();
+        });
+}
+
+const editSelectedCategories = new Map();
+
+// OPEN EDIT PROGRAM MODAL
+function openEditProgramModal() {
+    const modal = document.getElementById("editProgramModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex", "items-center", "justify-center");
+}
+
+function closeEditProgramModal() {
+    const modal = document.getElementById("editProgramModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex", "items-center", "justify-center");
+}
+
+// OPEN CATEGORY POPUP
+document.getElementById("editCategorySelectBox").onclick = () => {
+    const popup = document.getElementById("editCategoryOptionsPopup");
+    popup.classList.remove("hidden");
+    popup.classList.add("flex", "items-center", "justify-center");
+};
+
+// CLOSE CATEGORY POPUP
+function closeEditCategoryPopup() {
+    const popup = document.getElementById("editCategoryOptionsPopup");
+    popup.classList.add("hidden");
+    popup.classList.remove("flex", "items-center", "justify-center");
+}
+
+// UPDATE HIDDEN INPUTS
+function updateEditCategoryInputs() {
+    const letters = Array.from(editSelectedCategories.keys()).join(",");
+    const descriptions = Array.from(editSelectedCategories.values()).join(" | ");
+
+    document.getElementById("editCategoryLetters").value = letters;
+    document.getElementById("editCategoryDescriptions").value = descriptions;
+
+    document.getElementById("editCategorySelectedText").textContent =
+        letters ? letters : "Select category";
+}
+
+// BIND CATEGORY LIST
+function bindCategoryOptions() {
+    document.querySelectorAll("#editCategoryOptionsList li").forEach(option => {
+        const checkbox = option.querySelector(".checkboxIcon");
+        const infoIcon = option.querySelector(".categoryInfoIcon");
+
+        // LIST CLICK
+        option.onclick = (e) => {
+            if (e.target === infoIcon) return; // ignore if clicking the ?
+            const letter = option.dataset.value;
+            const desc = option.dataset.desc;
+
+            if (editSelectedCategories.has(letter)) {
+                editSelectedCategories.delete(letter);
+                option.classList.remove("selected-category");
+                checkbox.textContent = "☐";
+            } else {
+                editSelectedCategories.set(letter, desc);
+                option.classList.add("selected-category");
+                checkbox.textContent = "☑";
+            }
+            updateEditCategoryInputs();
+        };
+
+        // TOOLTIP
+        infoIcon.onclick = (e) => {
+            e.stopPropagation(); // prevent list selection
+            const desc = option.dataset.desc;
+            tooltip.textContent = desc;
+
+            const rect = infoIcon.getBoundingClientRect();
+            tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`;
+            tooltip.style.left = `${rect.left + window.scrollX}px`;
+            tooltip.classList.remove("hidden");
+        };
+    });
+}
+
+// TOOLTIP ELEMENT
+const tooltip = document.createElement("div");
+tooltip.id = "categoryTooltip";
+tooltip.className = "fixed bg-white text-black p-3 rounded shadow-lg z-50 hidden max-w-xs";
+document.body.appendChild(tooltip);
+
+// HIDE TOOLTIP OUTSIDE CLICK
+document.addEventListener("click", () => {
+    tooltip.classList.add("hidden");
+});
+
+// LOAD PROGRAM DATA INTO MODAL
+function bindProgramEvents() {
+    document.querySelectorAll('.edit-program-btn').forEach(btn => {
+        btn.onclick = function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const color = this.dataset.color || '#ffffff';
+            const letters = this.dataset.letters || "";
+            const descriptions = this.dataset.descriptions || "";
+
+            document.getElementById('editProgramId').value = id;
+            document.getElementById('editProgramName').value = name;
+            document.getElementById('editProgramColor').value = color;
+
+            editSelectedCategories.clear();
+            document.querySelectorAll("#editCategoryOptionsList li").forEach(li => {
+                li.classList.remove("selected-category");
+                li.querySelector(".checkboxIcon").textContent = "☐";
+            });
+
+            if (letters) {
+                const letterArr = letters.split(",");
+                const descArr = descriptions.split(" | ");
+                letterArr.forEach((letter, i) => {
+                    const cleanLetter = letter.trim();
+                    const li = document.querySelector(`#editCategoryOptionsList li[data-value="${cleanLetter}"]`);
+                    if (li) {
+                        li.classList.add("selected-category");
+                        li.querySelector(".checkboxIcon").textContent = "☑";
+                        editSelectedCategories.set(cleanLetter, descArr[i] || "");
+                    }
+                });
+            }
+
+            bindCategoryOptions(); // bind list & ? after preselect
+            updateEditCategoryInputs();
+            openEditProgramModal();
+        };
+    });
+}
+
+// Function to show a message
+function showEditProgramMessage(text, success = true) {
+    const msgDiv = document.getElementById("editProgramMessage");
+    msgDiv.textContent = text;
+    msgDiv.classList.remove("hidden", "bg-green-600", "bg-red-600");
+    msgDiv.classList.add(success ? "bg-green-600" : "bg-red-600");
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+        msgDiv.classList.add("hidden");
+    }, 3000);
+}
+
+// AJAX submit
+document.getElementById("editProgramForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); // prevent normal form submit
+
+    const data = {
+        id: document.getElementById("editProgramId").value,
+        name: document.getElementById("editProgramName").value,
+        color: document.getElementById("editProgramColor").value,
+        category_letters: document.getElementById("editCategoryLetters").value,
+        category_description: document.getElementById("editCategoryDescriptions").value
+    };
+
+    try {
+        const res = await fetch("/admin/editProgram", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            showEditProgramMessage("Program updated successfully!", true);
+            reloadProgramList(); // your function to refresh list
+            closeEditProgramModal();
+        } else {
+            showEditProgramMessage("Error: " + result.message, false);
+        }
+    } catch (err) {
+        alert("Unexpected error: " + err);
+    }
+});
+
+categorySelectBox.addEventListener("click", () => {
+    categoryOptionsPopup.classList.remove("hidden");
+    categoryOptionsPopup.classList.add("flex", "items-center", "justify-center");
+});
+
+function closeCategoryPopup() {
+    categoryOptionsPopup.classList.add("hidden");
+    categoryOptionsPopup.classList.remove("flex", "items-center", "justify-center");
+}
+
+document.querySelectorAll("#categoryOptionsList li").forEach(option => {
+    option.addEventListener("click", (e) => {
+
+        if (e.target.classList.contains("categoryInfoIcon")) return;
+
+        const letter = option.dataset.value;
+        const desc = option.dataset.desc;
+        const checkbox = option.querySelector(".checkboxIcon");
+
+        if (selectedCategories.has(letter)) {
+            selectedCategories.delete(letter);
+            option.classList.remove("selected-category");
+            checkbox.textContent = "☐";
+        } else {
+            selectedCategories.set(letter, desc);
+            option.classList.add("selected-category");
+            checkbox.textContent = "☑";
+        }
+
+        categorySelectedText.textContent =
+            selectedCategories.size
+                ? Array.from(selectedCategories.keys()).join(", ")
+                : "Select category";
+
+        categoryLettersInput.value =
+            Array.from(selectedCategories.keys()).join(",");
+
+        categoryDescriptionsInput.value =
+            Array.from(selectedCategories.values()).join(" | ");
+    });
+});
+
+programNameInput.addEventListener("input", () => {
+    const value = programNameInput.value.toLowerCase();
+
+    // 🔥 Clear previous selections first (auto mode)
+    selectedCategories.clear();
+
+    document.querySelectorAll("#categoryOptionsList li").forEach(li => {
+        li.classList.remove("selected-category");
+        li.querySelector(".checkboxIcon").textContent = "☐";
+    });
+
+    // 🔥 Find matches
+    const matchedLetters = new Set();
+
+    Object.entries(categoryKeywords).forEach(([letter, keywords]) => {
+        for (let keyword of keywords) {
+            if (value.includes(keyword)) {
+                matchedLetters.add(letter);
+                break; // stop checking more keywords for this letter
+            }
+        }
+    });
+
+    // 🔥 Apply matches
+    matchedLetters.forEach(letter => {
+        const li = document.querySelector(
+            `#categoryOptionsList li[data-value="${letter}"]`
+        );
+
+        if (li) {
+            const desc = li.dataset.desc;
+
+            selectedCategories.set(letter, desc);
+            li.classList.add("selected-category");
+            li.querySelector(".checkboxIcon").textContent = "☑";
+        }
+    });
+
+    // 🔥 Update UI text + hidden inputs
+    categorySelectedText.textContent =
+        selectedCategories.size
+            ? Array.from(selectedCategories.keys()).join(", ")
+            : "Select category";
+
+    categoryLettersInput.value =
+        Array.from(selectedCategories.keys()).join(",");
+
+    categoryDescriptionsInput.value =
+        Array.from(selectedCategories.values()).join(" | ");
+});
+
+helpIcon.addEventListener("click", (e) => {
+    e.stopPropagation();
+    helpPopup.classList.toggle("hidden");
+});
+
+function closeCategoryHelp() {
+    helpPopup.classList.add("hidden");
+}
+
+document.addEventListener("click", (e) => {
+    if (!categorySelectBox.contains(e.target) && !categoryOptionsPopup.contains(e.target)) {
+        closeCategoryPopup();
+    }
+});
+
+document.querySelectorAll(".categoryInfoIcon").forEach(icon => {
+    icon.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const li = e.target.closest("li");
+        const desc = li.dataset.desc;
+
+        optionhelpText.textContent = desc;
+
+        const liRect = li.getBoundingClientRect();
+        const modalRect = li.closest("#categoryOptionsPopup div").getBoundingClientRect();
+
+        optionhelpPopup.style.top = (liRect.top - modalRect.top) + "px";
+        optionhelpPopup.style.left = (liRect.right - modalRect.left + 10) + "px";
+
+        optionhelpPopup.classList.remove("hidden");
+    });
+});
+
+function closeCategoryOptionHelp() {
+    optionhelpPopup.classList.add("hidden");
+}
+
+document.addEventListener("click", (e) => {
+    if (!optionhelpPopup.contains(e.target) && !e.target.classList.contains("categoryInfoIcon")) {
+        closeCategoryOptionHelp();
+    }
+});
+
+
+function openColorPicker(programName) {
+    selectedProgram = programName;
+    document.getElementById("colorModal").classList.remove("hidden");
+}
+
+function closeColorModal() {
+    document.getElementById("colorModal").classList.add("hidden");
+}
+
+// Save color when changed
+document.getElementById("colorPicker").addEventListener("change", function () {
+    const color = this.value;
+
+    fetch("/admin/addProgramColor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            program_name: selectedProgram,
+            color: color
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            closeColorModal();
+            reloadProgramList()
+        } else {
+            alert(data.message);
+        }
+    });
+});
+
+document.querySelectorAll(".program-color").forEach(el => {
+    const color = el.dataset.color || el.style.backgroundColor;
+    if (color) el.style.backgroundColor = color;
+});
+
+function deleteProgram(programId, programName) {
+    programToDelete = programId;
+
+    document.getElementById("deleteProgramName").innerText =
+        `"${programName}"`;
+
+    document.getElementById("deleteProgramModal").classList.remove("hidden");
+}
+
+function closeDeleteProgramModal() {
+    programToDelete = null;
+    document.getElementById("deleteProgramModal").classList.add("hidden");
+}
+
+function confirmDeleteProgram() {
+    if (!programToDelete) return;
+
+    fetch("/admin/deleteProgram", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            program_id: programToDelete
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            reloadProgramList();
+        } else {
+            alert(data.message || "Failed to delete program");
+        }
+
+        closeDeleteProgramModal();
+    });
+}
+
+function enableOutsideClickClose(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.addEventListener('click', (e) => {
+        const content = modal.querySelector('div.bg-white');
+        if (!content.contains(e.target)) {
+            modal.classList.add('hidden');
+        }
+    });
+}
+
+// Apply to modals
+enableOutsideClickClose('editProgramModal');
+enableOutsideClickClose('deleteProgramModal');
+
+document.addEventListener("DOMContentLoaded", function () {
+    bindProgramEvents();
+});
+</script>
+</body>
+</html>

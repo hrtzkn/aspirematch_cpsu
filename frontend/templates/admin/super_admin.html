@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Admin</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/adminBase.html' %}
+
+    <!-- MAIN CONTENT -->
+<div class="flex flex-1">
+    <main class="ml-60 mr-2 flex-1 bg-[#f6ebcd] mt-20 rounded-md mb-20">
+        <div class="bg-white p-3 shadow-md rounded-md border border-[#166D3B] ">
+            <div class="flex justify-between mb-4">
+                
+                <h1 class="text-2xl font-bold">SUPER ADMINISTRATOR</h1>
+                <a href="{{ url_for('admin.addAdmin') }}"
+                        class="bg-[#166D3B] text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm">
+                    Sub Admin
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="
+                    p-3 mb-3 rounded text-white
+                    {% if category == 'success' %} bg-green-500
+                    {% elif category == 'error' %} bg-red-500
+                    {% endif %}
+                ">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form action="/admin/addSuper" method="POST" class="flex flex-col">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-black">Fullname</label>
+                        <input type="text" name="fullname" required
+                            class="w-full p-2 border border-[#166D3B] bg-white rounded-md"
+                            oninput="this.value = this.value.toUpperCase().replace(/[^\p{L}\p{M}\s.,'!?@#&()\-_:;]/gu, '')">
+                    </div>
+
+                    <div>
+                        <label class="block text-black">Campus</label>
+                        <select name="campus" required
+                            class="bg-white block w-full p-2 border border-[#166D3B] rounded-md">
+                            <option value="" disabled selected>Select Campus</option>
+                            {% for c in campuses %}
+                                <option value="{{ c.campus_name }}">{{ c.campus_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-black">Username</label>
+                        <input type="text" name="user_name" required
+                            class="w-full p-2 border border-[#166D3B] bg-white rounded-md">
+                    </div>
+
+                    <div>
+                        <label class="block text-black">Email Address</label>
+                        <input type="email" name="email" required
+                            class="w-full p-2 border border-[#166D3B] bg-white rounded-md">
+                    </div>
+                </div>
+
+                <!-- PASSWORD -->
+                <div class="mb-4">
+                    <label class="block text-black">Password</label>
+
+                    <div class="flex gap-3 items-center">
+                        <input id="adminPassword"
+                            type="password"
+                            name="password"
+                            required
+                            class="w-[625px] p-2 border border-[#166D3B] bg-white rounded-md"
+                            onkeyup="checkPasswordStrength()">
+
+                        <button type="button" onclick="togglePassword()"
+                            class="bg-gray-500 text-white px-4 py-2 rounded-md text-sm">
+                            Show
+                        </button>
+
+                        <button type="button" onclick="copyPassword()"
+                            class="bg-black text-white px-4 py-2 rounded-md text-sm">
+                            Copy
+                        </button>
+
+                        <button type="button" onclick="generateStrongPassword()"
+                            class="bg-[#166D3B] text-white px-4 py-2 rounded-md text-sm">
+                            Suggest Password
+                        </button>
+                    </div>
+
+                    <div class="w-full h-2 bg-gray-300 rounded mt-2">
+                        <div id="strengthBar" class="h-full w-0 rounded transition-all"></div>
+                    </div>
+
+                    <p id="passwordStrengthMsg" class="text-xs text-gray-600 mt-1"></p>
+
+                    <p class="text-xs mt-1 text-gray-700">
+                        Password must include:
+                        <span id="reqUpper" class="text-red-600">❌ A-Z</span>,
+                        <span id="reqLower" class="text-red-600">❌ a-z</span>,
+                        <span id="reqNumber" class="text-red-600">❌ 0-9</span>,
+                        <span id="reqSymbol" class="text-red-600">❌ symbol</span>,
+                        <span id="reqLength" class="text-red-600">❌ 8 characters</span>
+                    </p>
+                </div>
+
+                <!-- BUTTON + MESSAGE -->
+                <div class="flex items-center gap-4">
+                    <button type="submit"
+                        class="bg-[#166D3B] text-white py-2 px-4 rounded-md hover:bg-green-700 text-sm">
+                        Add Super Admin
+                    </button>
+
+                    {% if message %}
+                    <span class="text-sm font-medium
+                        {% if category == 'success' %} text-green-600
+                        {% elif category == 'danger' %} text-red-600
+                        {% else %} text-gray-600 {% endif %}">
+                        {{ message }}
+                    </span>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script>
+function togglePassword() {
+    const input = document.getElementById("adminPassword");
+    input.type = input.type === "password" ? "text" : "password";
+}
+
+function copyPassword() {
+    const input = document.getElementById("adminPassword");
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value);
+    alert("Password copied!");
+}
+
+function generateStrongPassword() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+    let password = "";
+    
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    document.getElementById("adminPassword").value = password;
+    checkPasswordStrength();
+}
+
+function checkPasswordStrength() {
+    const password = document.getElementById("adminPassword").value;
+
+    const upper = /[A-Z]/.test(password);
+    const lower = /[a-z]/.test(password);
+    const number = /[0-9]/.test(password);
+    const symbol = /[\W_]/.test(password);
+    const length = password.length >= 8;
+
+    // Update requirement text
+    document.getElementById("reqUpper").textContent = upper ? "✔ A-Z" : "❌ A-Z";
+    document.getElementById("reqUpper").className = upper ? "text-green-600" : "text-red-600";
+
+    document.getElementById("reqLower").textContent = lower ? "✔ a-z" : "❌ a-z";
+    document.getElementById("reqLower").className = lower ? "text-green-600" : "text-red-600";
+
+    document.getElementById("reqNumber").textContent = number ? "✔ 0-9" : "❌ 0-9";
+    document.getElementById("reqNumber").className = number ? "text-green-600" : "text-red-600";
+
+    document.getElementById("reqSymbol").textContent = symbol ? "✔ symbol" : "❌ symbol";
+    document.getElementById("reqSymbol").className = symbol ? "text-green-600" : "text-red-600";
+
+    document.getElementById("reqLength").textContent = length ? "✔ 8 characters" : "❌ 8 characters";
+    document.getElementById("reqLength").className = length ? "text-green-600" : "text-red-600";
+
+    // Strength bar
+    let strength = [upper, lower, number, symbol, length].filter(Boolean).length;
+    const bar = document.getElementById("strengthBar");
+
+    if (strength <= 2) {
+        bar.style.width = "30%";
+        bar.style.backgroundColor = "red";
+    } else if (strength <= 4) {
+        bar.style.width = "70%";
+        bar.style.backgroundColor = "orange";
+    } else {
+        bar.style.width = "100%";
+        bar.style.backgroundColor = "green";
+    }
+
+    // Message
+    const msg = document.getElementById("passwordStrengthMsg");
+    if (strength <= 2) msg.textContent = "Weak password";
+    else if (strength <= 4) msg.textContent = "Medium password";
+    else msg.textContent = "Strong password";
+}
+</script>
+
+</body>
+</html>

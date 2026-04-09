@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOOTER</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+{% set campus_addresses = {
+    'San Carlos Campus': 'Sitio Mabuni, Brgy. Guadalupe, San Carlos City, Negros Occidental',
+    'Candoni Campus': 'Brgy. West, Candoni, Negros Occidental',
+    'Cauayan Campus': 'Brgy. Poblacion, Cauayan, Negros Occidental',
+    'Moises Padilla Campus': 'Brgy. Poblacion, Moises Padilla, Negros Occidental',
+    'Kabankalan Campus': 'Kabankalan City, Negros Occidental',
+    'Hinigaran Campus': 'Brgy. Gargato, Hinigaran, Negros Occidental',
+    'Hinoba-an Campus': 'Brgy. Pook, Hinoba-an, Negros Occidental',
+    'Sipalay Campus': 'Brgy. Gil Montilla, Sipalay City, Negros Occidental',
+    'Victorias Campus': 'Brgy. XIV, Victorias City, Negros Occidental',
+    'Valladolid Extension Class': 'Valladolid, Negros Occidental',
+    'Ilog Campus': 'Brgy. 1, Municipality of Ilog, Negros Occidental'
+} %}
+<footer class="hidden md:block bg-[#166D3B] text-center text-white fixed bottom-0 left-0 w-full h-10">
+    <div class="flex justify-around text-xs">
+        <div class="flex items-center space-x-4">
+            <img src="{{ url_for('static', filename='images/cpsulogo.png') }}"
+                 alt="CPSU Logo"
+                 class="w-10 h-9">
+            <h1 class="font-semibold text-[15px] uppercase">
+                CENTRAL PHILIPPINES STATE UNIVERSITY, {{ student_campus }}
+            </h1>
+            <h1 class="text-[15px]">
+                {{ campus_addresses.get(student_campus, 'Negros Occidental') }}
+            </h1>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

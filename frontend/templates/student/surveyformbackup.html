@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SURVEY FORM</title>
+  <link href="/static/css/output.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+
+{% include 'components/studentHeader.html' %}
+
+<!-- MAIN CONTENT -->
+<div class="flex items-center justify-center min-h-screen bg-[#f6ebcd] px-4">
+  <main
+    class="bg-white  max-w-2xl rounded-lg shadow-md
+           flex flex-col max-h-[90vh]">
+
+    <!-- FORM HEADER / BODY -->
+    <form id="studentForm" class="flex flex-col flex-1 p-4 sm:p-6 overflow-hidden">
+
+      <!-- Preferred Program -->
+      <div id="preferredProgramDiv" class="space-y-2">
+        <label for="preferredProgram" class="block text-base sm:text-lg font-semibold">
+          Preferred Program:
+        </label>
+
+        <select
+          id="preferredProgram"
+          name="preferredProgram"
+          class="border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#166D3B]"
+          required>
+          <option value="" selected disabled>Select Program</option>
+          <option value="HM">Hospitality Management</option>
+          <option value="AGRI">Agriculture</option>
+          <option value="EDUC">Education</option>
+          <option value="IT">Information Technology</option>
+          <option value="CRIM">Criminology</option>
+        </select>
+      </div>
+
+      <!-- Interest Questions -->
+      <div id="interestDiv" class="hidden flex flex-col flex-1">
+
+        <h3 class="text-base sm:text-lg font-semibold mb-3">
+          Select your area of interest:
+        </h3>
+
+        <!-- SCROLLABLE QUESTIONS AREA -->
+        <div
+          id="interestOptions"
+          class="flex-1 overflow-y-auto rounded-lg p-4 space-y-4">
+        </div>
+
+        <p id="errorMsg" class="text-red-600 mt-2 hidden text-sm">
+          Please select an option before proceeding.
+        </p>
+
+        <!-- NAV BUTTONS -->
+        <div class="flex justify-between mt-4 gap-4">
+          <button
+            type="button"
+            id="backBtn"
+            class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 hidden w-full sm:w-auto">
+            Back
+          </button>
+
+          <button
+            type="button"
+            id="nextBtn"
+            class="bg-[#166D3B] text-white px-4 py-2 rounded hover:bg-green-700 w-full sm:w-auto">
+            Next
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+  const preferredProgram = document.getElementById("preferredProgram");
+  const preferredProgramDiv = document.getElementById("preferredProgramDiv");
+  const interestDiv = document.getElementById("interestDiv");
+  const interestOptions = document.getElementById("interestOptions");
+  const backBtn = document.getElementById("backBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const errorMsg = document.getElementById("errorMsg");
+
+  const interestPairs = [
+    [
+      { key: "A", text: "Operate a printing press" },
+      { key: "B", text: "Study the causes of earthquakes" }
+    ],
+    [
+      { key: "C", text: "Plant and harvest crops" },
+      { key: "R", text: "Replaces a car window and fender" }
+    ],
+    [
+      { key: "E", text: "Analyze reports and records" },
+      { key: "F", text: "Operate a machine" }
+    ],
+    [
+      { key: "G", text: "Work in an office" },
+      { key: "H", text: "Answer costumer questions" }
+    ],
+    [
+      { key: "D", text: "Write reports" },
+      { key: "J", text: "Helps former prison inmates find work" }
+    ],
+    [
+      { key: "L", text: "Design a freeway" },
+      { key: "M", text: "Plan educational lessons" }
+    ],
+    [
+      { key: "N", text: "balance a checkbook" },
+      { key: "O", text: "Take an x -ray" }
+    ],
+    [
+      { key: "P", text: "Write a computer program" },
+      { key: "Q", text: "Train animals" }
+    ],
+    [
+      { key: "C", text: "Be in charge of replanting forest" },
+      { key: "A", text: "Acts in TV show or movies" }
+    ],
+    [
+      { key: "D", text: "Solve a burglary" },
+      { key: "F", text: "Checks product quality" }
+    ],
+    [
+      { key: "E", text: "Build an airport" },
+      { key: "G", text: "keep company business records" }
+    ],
+    [
+      { key: "F", text: "Put together small tools" },
+      { key: "P", text: "Design a website" }
+    ],
+    [
+      { key: "M", text: "Tutor students" },
+      { key: "Q", text: "Works at zoo" }
+    ],
+    [
+      { key: "J", text: "Take care of children" },
+      { key: "O", text: "Plan special diets" }
+    ],
+    [
+      { key: "A", text: "Choreograph a dance" },
+      { key: "K", text: "Lobby or show support for a cause" }
+    ],
+    [
+      { key: "H", text: "Sell cloths" },
+      { key: "E", text: "Work with your hands" }
+    ],
+    [
+      { key: "I", text: "Work at an amusement park" },
+      { key: "N", text: "Sell insurance" }
+    ],
+    [
+      { key: "I", text: "Learn about ethnic groups" },
+      { key: "P", text: "Manage an information system" }
+    ],
+    [
+      { key: "N", text: "Appraise the value of a house" },
+      { key: "M", text: "File books at the library" }
+    ],
+    [
+      { key: "M", text: "Grade papers" },
+      { key: "R", text: "Operate a train" }
+    ],
+    [
+      { key: "L", text: "Order building supplies" },
+      { key: "E", text: "Paint motors" }
+    ],
+    [
+      { key: "P", text: "Develop new computer games" },
+      { key: "H", text: "Buy merchandise for a store" }
+    ],
+    [
+      { key: "K", text: "Work to get someone elected" },
+      { key: "C", text: "Identify plants in a forest" }
+    ],
+    [
+      { key: "D", text: "Guard inmates in a prison" },
+      { key: "L", text: "Read blueprints" }
+    ],
+    [
+      { key: "H", text: "Line up concerts for a band" },
+      { key: "K", text: "Ask people survey questions" }
+    ],
+    [
+      { key: "E", text: "Manage a factory" },
+      { key: "O", text: "Work as a nurse in a hospital" }
+    ],
+    [
+      { key: "A", text: "Paint a portrait" },
+      { key: "K", text: "Testify before Congress" }
+    ],
+    [
+      { key: "B", text: "Work with a microscope" },
+      { key: "I", text: "Schedule tee times at a golf course" }
+    ],
+    [
+      { key: "C", text: "Classify plants" },
+      { key: "O", text: "Transcribe medical records" }
+    ],
+    [
+      { key: "E", text: "Make three-dimensional items" },
+      { key: "D", text: "Analyze handwriting" }
+    ],
+    [
+      { key: "B", text: "Design indoor sprinkler systems" },
+      { key: "F", text: "Run a factory sewing machine" }
+    ],
+    [
+      { key: "G", text: "Develop personnel policies" },
+      { key: "Q", text: "Train racehorses" }
+    ],
+    [
+      { key: "D", text: "Guard an office building" },
+      { key: "H", text: "Run a department store" }
+    ],
+    [
+      { key: "A", text: "Write for a newspaper" },
+      { key: "G", text: "Use a calculator" }
+    ],
+    [
+      { key: "O", text: "Help people at a mental health clinic" },
+      { key: "L", text: "Remodel old houses" }
+    ],
+    [
+      { key: "M", text: "Care for young children" },
+      { key: "D", text: "Locate a missing person" }
+    ],
+    [
+      { key: "N", text: "Plan estate disbursements/payments" },
+      { key: "P", text: "Enter data" }
+    ],
+    [
+      { key: "A", text: "Design a book cover" },
+      { key: "E", text: "Build toys with written instructions" }
+    ],
+    [
+      { key: "B", text: "Figure out why someone is sick" },
+      { key: "R", text: "Fly an airplane" }
+    ],
+    [
+      { key: "C", text: "Learn how things grow and stay alive" },
+      { key: "H", text: "Sell cars" }
+    ],
+    [
+      { key: "I", text: "Work as a restaurant host or hostess" },
+      { key: "D", text: "Fight fires" }
+    ],
+    [
+      { key: "G", text: "Keep payroll records for a company" },
+      { key: "J", text: "Work in a nursing home" }
+    ],
+    [
+      { key: "G", text: "Hire new staff" },
+      { key: "O", text: "Run ventilators/breathing machines" }
+    ],
+    [
+      { key: "R", text: "Drive a taxi" },
+      { key: "A", text: "Broadcast the news" }
+    ],
+    [
+      { key: "K", text: "Audit taxes for the government" },
+      { key: "B", text: "Sort and date dinosaur bones" }
+    ],
+    [
+      { key: "O", text: "Give shots" },
+      { key: "C", text: "Design landscaping" }
+    ],
+    [
+      { key: "P", text: "Give tech support to computer users" },
+      { key: "D", text: "Work in a courtroom" }
+    ],
+    [
+      { key: "Q", text: "Care for injured animals" },
+      { key: "I", text: "Serve meals to customers" }
+    ],
+    [
+      { key: "F", text: "Install rivets" },
+      { key: "Q", text: "Raise worms" }
+    ],
+    [
+      { key: "N", text: "Balance accounts" },
+      { key: "M", text: "Develop learning games" }
+    ],
+    [
+      { key: "J", text: "Read to sick people" },
+      { key: "P", text: "Repair computers" }
+    ],
+    [
+      { key: "F", text: "Compare sizes and shapes of objects" },
+      { key: "Q", text: "Fish" }
+    ],
+    [
+      { key: "R", text: "Repair bicycles" },
+      { key: "K", text: "Deliver mail" }
+    ],
+    [
+      { key: "M", text: "Teach Special Education" },
+      { key: "P", text: "Set up a tracking system" }
+    ],
+    [
+      { key: "G", text: "Manage a store" },
+      { key: "H", text: "Advertise goods and services" }
+    ],
+    [
+      { key: "R", text: "Distribute supplies to dentists" },
+      { key: "I", text: "Compete in a sports event" }
+    ],
+    [
+      { key: "I", text: "Check guests into a hotel" },
+      { key: "M", text: "Teach adults to read" }
+    ],
+    [
+      { key: "L", text: "Follow step-by-step instructions" },
+      { key: "N", text: "Collect past due bills" }
+    ],
+    [
+      { key: "L", text: "Build kitchen cabinets" },
+      { key: "N", text: "Refinance a mortgage" }
+    ],
+    [
+      { key: "A", text: "Sing in a concert" },
+      { key: "R", text: "Direct the takeoff/landing of planes" }
+    ],
+    [
+      { key: "G", text: "Operate a cash register" },
+      { key: "B", text: "Collect rocks" }
+    ],
+    [
+      { key: "G", text: "Start a business" },
+      { key: "L", text: "Draft a blueprint" }
+    ],
+    [
+      { key: "M", text: "Assess student progress" },
+      { key: "L", text: "Design an airplane" }
+    ],
+    [
+      { key: "O", text: "Wrap a sprained ankle" },
+      { key: "I", text: "Guide an international tour group" }
+    ],
+    [
+      { key: "P", text: "Solve technical problems" },
+      { key: "J", text: "Provide spiritual guidance to others" }
+    ],
+    [
+      { key: "Q", text: "Manage a veterinary clinic" },
+      { key: "K", text: "Lead others" }
+    ],
+    [
+      { key: "E", text: "Operate heavy equipment" },
+      { key: "Q", text: "Manage a fish hatchery" }
+    ],
+    [
+      { key: "F", text: "Assemble cars" },
+      { key: "K", text: "Protect our borders" }
+    ],
+    [
+      { key: "A", text: "Play an instrument" },
+      { key: "J", text: "Plan activities for adult day care" }
+    ],
+    [
+      { key: "C", text: "Research soybean use in paint" },
+      { key: "J", text: "Provide consumer information" }
+    ],
+    [
+      { key: "D", text: "Guard money in an armored car" },
+      { key: "B", text: "Study human behavior" }
+    ],
+    [
+      { key: "E", text: "Fix a television set" },
+      { key: "M", text: "Run a school" }
+    ],
+    [
+      { key: "F", text: "Fix a control panel" },
+      { key: "J", text: "Help friends with personal problems" }
+    ],
+    [
+      { key: "C", text: "Oversee a logging crew" },
+      { key: "B", text: "Study weather conditions" }
+    ],
+    [
+      { key: "R", text: "Pack boxes at a warehouse" },
+      { key: "A", text: "Teach dancing" }
+    ],
+    [
+      { key: "O", text: "Sterilize surgical instruments" },
+      { key: "B", text: "Study soil conditions" }
+    ],
+    [
+      { key: "N", text: "Play the stock market" },
+      { key: "C", text: "Protect the environment" }
+    ],
+    [
+      { key: "R", text: "Inspect cargo containers" },
+      { key: "F", text: "Work in a cannery" }
+    ],
+    [
+      { key: "I", text: "Coach a school sports team" },
+      { key: "P", text: "Update a website" }
+    ],
+    [
+      { key: "Q", text: "Hunt" },
+      { key: "K", text: "Enlist in a branch of the military" }
+    ],
+    [
+      { key: "H", text: "Sell sporting goods" },
+      { key: "J", text: "Cut and style hair" }
+    ],
+    [
+      { key: "B", text: "Experiment to find new metals" },
+      { key: "N", text: "Work in a bank" }
+    ],
+    [
+      { key: "G", text: "Work with computer programs" },
+      { key: "N", text: "Loan money" }
+    ],
+    [
+      { key: "L", text: "Hang wallpaper" },
+      { key: "D", text: "Make an arrest" }
+    ],
+    [
+      { key: "O", text: "Deliver babies" },
+      { key: "H", text: "Persuade people to buy something" }
+    ],
+    [
+      { key: "H", text: "Stock shelves" },
+      { key: "I", text: "Serve concession stand drinks" }
+    ]
+  ];
+
+  let currentIndex = 0;
+
+  preferredProgram.addEventListener("change", () => {
+    preferredProgramDiv.style.display = "none";
+    interestDiv.style.display = "block";
+    currentIndex = 0;
+    showPair(currentIndex);
+  });
+
+  function showPair(index) {
+    interestOptions.innerHTML = "";
+
+    if (index >= interestPairs.length) {
+      interestOptions.innerHTML = "<p class='text-green-600 font-semibold'>✅ Thank you! You have completed all questions.</p>";
+      backBtn.style.display = "none";
+      nextBtn.style.display = "none";
+
+      setTimeout(() => {
+        window.location.href = "/home";
+      }, 3000);
+
+      return;
+    }
+
+    const pair = interestPairs[index];
+    const option1 = pair[0];
+    const option2 = pair[1];
+
+    const div = document.createElement("div");
+    div.classList.add("mb-4");
+    div.innerHTML = `
+      <label class="flex items-start gap-2 cursor-pointer">
+        <input type="radio" name="interest${index}" value="${option1.key}" class="mt-1">
+        <span><strong>${option1.key}.</strong> ${option1.text}</span>
+      </label>
+
+      <label class="flex items-start gap-2 cursor-pointer mt-2">
+        <input type="radio" name="interest${index}" value="${option2.key}" class="mt-1">
+        <span><strong>${option2.key}.</strong> ${option2.text}</span>
+      </label>
+    `;
+    interestOptions.appendChild(div);
+
+    if (index === 0) {
+      backBtn.style.display = "inline-block";
+      backBtn.onclick = () => {
+        interestDiv.style.display = "none";
+        preferredProgramDiv.style.display = "block";
+      };
+    } else {
+      backBtn.style.display = "inline-block";
+      backBtn.onclick = () => {
+        currentIndex--;
+        showPair(currentIndex);
+      };
+    }
+
+    div.querySelectorAll("input").forEach(input => {
+      input.addEventListener("change", () => {
+        errorMsg.classList.add("hidden");
+
+        const chosenLetter = input.value;
+        const chosenText = input.parentNode.textContent.trim();
+
+        // --- NEW: fetch description directly from Python via small endpoint ---
+        fetch(`/get_letter_description/${chosenLetter}`)
+          .then(res => res.json())
+          .then(data => {
+            const description = data.description;
+
+            // ---- SEND TO CHATBOT ----
+
+            fetch("/chatbot_receive_interest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", },
+                body: JSON.stringify({ letter: chosenLetter })
+            })
+            .then(res => res.json())
+            .then(chat => {
+                danReply(chat.reply);
+            })
+           })
+            .catch(err => console.error("Chatbot error:", err));
+
+        // ---- SAVE ANSWER TO DATABASE (your existing function) ----
+        fetch("/save_answer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            pair_number: index,
+            selected_option: chosenLetter
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log("Saved:", data);
+        })
+        .catch(err => console.error("Error saving:", err));
+
+        setTimeout(() => {
+          currentIndex++;
+          showPair(currentIndex);
+        }, 200);
+      });
+    });
+
+    nextBtn.style.display = "inline-block";
+    nextBtn.onclick = () => {
+      const radios = document.querySelectorAll(`input[name="interest${currentIndex}"]`);
+      let selected = false;
+      radios.forEach(r => { if (r.checked) selected = true; });
+
+      if (selected) {
+        errorMsg.classList.add("hidden");
+        currentIndex++;
+        showPair(currentIndex);
+      } else {
+        errorMsg.classList.remove("hidden");
+      }
+    };
+  }
+
+  document.getElementById("preferredProgram").addEventListener("change", function() {
+      const formData = new FormData();
+      formData.append("preferredProgram", this.value);
+
+      fetch("/save_preferred_program", {
+          method: "POST",
+          body: formData
+      })
+      .then(res => res.json())
+      .then(data => console.log(data));
+  });
+
+</script>
+
+
+</body>
+</html>

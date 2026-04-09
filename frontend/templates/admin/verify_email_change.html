@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN EMAIL CHANGE</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/aspirematch.png') }}">
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col min-h-screen bg-[#f6ebcd]">
+     <header class="fixed top-0 left-0 right-0 bg-[#166D3B] text-[#f6ebcd] flex justify-between px-8 py-4 w-full h-16 z-50">
+        <div class="max-w-7xl mx-auto h-full px-6 flex items-center justify-center">
+            <img src="/static/images/aspire.png" alt="AspireMatch Logo" class="max-h-20 w-auto">
+        <h1 class="text-[#f6ebcd] text-2xl font-semibold tracking-wide text-center">
+            ASPIREMATCH: <span class="font-light">A Career Interest Recommendation Application</span>
+        </h1>
+        </div>
+    </header>
+
+    <div class="grow flex flex-col mt-10 justify-center items-center">
+        <div class="bg-white p-10 rounded-lg shadow-lg w-fit flex flex-col items-center">
+            <form method="POST" class="max-w-md mx-auto bg-white p-6 rounded shadow space-y-4">
+                <h2 class="text-xl font-bold text-[#166D3B]">
+                    Verify New Email
+                </h2>
+
+                <p class="text-sm">
+                    Enter the verification code sent to your new email.  <!-- <br> You can view it in "Spam" message -->
+                </p>
+
+                <input type="text"
+                    name="otp"
+                    required
+                    class="w-full border rounded px-3 py-2">
+
+                <button class="bg-[#166D3B] text-white w-full py-2 rounded">
+                    Verify Email
+                </button>
+
+                <a href="{{ url_for('admin.resend_email_otp') }}"
+                class="block text-center text-sm text-blue-600 hover:underline">
+                    Resend code
+                </a>
+
+                <button name="action"
+                        value="back"
+                        class="w-full bg-gray-400 text-white py-2 rounded">
+                    Back
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

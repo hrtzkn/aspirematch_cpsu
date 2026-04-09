@@ -1,0 +1,17 @@
+Flask>=2.0
+python-dotenv
+psycopg2-binary
+groq
+gunicorn
+pandas
+numpy
+WeasyPrint
+Werkzeug
+Jinja2
+pillow
+openpyxl
+requests
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
