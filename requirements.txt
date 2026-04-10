@@ -5,7 +5,11 @@ groq
 gunicorn
 pandas
 numpy
+
 xhtml2pdf==0.2.11
+reportlab==3.6.12
+svglib==1.5.1
+
 Werkzeug
 Jinja2
 pillow
