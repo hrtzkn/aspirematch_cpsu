@@ -5,7 +5,7 @@ groq
 gunicorn
 pandas
 numpy
-xhtml2pdf
+xhtml2pdf==0.2.11
 Werkzeug
 Jinja2
 pillow
