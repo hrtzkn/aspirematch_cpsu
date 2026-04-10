@@ -9,6 +9,7 @@ numpy
 xhtml2pdf==0.2.11
 reportlab==3.6.12
 svglib==1.5.1
+rlpycairo==0.0.0
 
 Werkzeug
 Jinja2
