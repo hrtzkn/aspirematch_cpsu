@@ -99,7 +99,7 @@
         }
 
         .section {
-            margin-bottom: 20px;
+            margin-bottom: 1px;
         }
 
         .section1 {
@@ -184,7 +184,7 @@
         }
 
         .table-title {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: bold;
             text-align: center;
             padding: 10px;
@@ -192,15 +192,14 @@
 
         .student-info-left {
             width: 75%;
-            padding: 10px;
             vertical-align: top;
+            font-size: 12px;
         }
 
         .student-info-right {
             width: 25%;
             text-align: center;
             vertical-align: top;
-            padding: 10px;
         }
 
         .student-photo {
@@ -244,25 +243,28 @@
 <div class="print-container">
 
     <!-- HEADER -->
-    <table class="header-table">
-        <tr>
-            <td width="35%">
-                <div class="logos">
-                    <img src="data:image/png;base64,{{ cpsu_logo_base64 }}">
-                    <img src="data:image/png;base64,{{ bagong_logo_base64 }}">
-                    <img src="data:image/png;base64,{{ safe_logo_base64 }}">
-                </div>
-            </td>
-            <td class="school-info">
-                <div class="country">Republic of the Philippines</div>
-                <div class="school">Central Philippines State University</div>
-                <div class="school">{{ student_campus }}</div>
-                <div class="address">
-                    {{ campus_info.get(student_campus, 'Campus Address') }}
-                </div>
-            </td>
-        </tr>
-    </table>
+<table class="header-table">
+    <tr>
+        <td width="35%" style="border-right:2px solid #000; padding-right:10px;">
+            <table>
+                <tr>
+                    <td><img src="data:image/png;base64,{{ cpsu_logo_base64 }}" height="60"></td>
+                    <td><img src="data:image/png;base64,{{ bagong_logo_base64 }}" height="60"></td>
+                    <td><img src="data:image/png;base64,{{ safe_logo_base64 }}" height="60"></td>
+                </tr>
+            </table>
+        </td>
+
+        <td class="school-info">
+            <div class="country">Republic of the Philippines</div>
+            <div class="school">Central Philippines State University</div>
+            <div class="school">{{ student_campus }}</div>
+            <div class="address">
+                {{ campus_info.get(student_campus, 'Campus Address') }}
+            </div>
+        </td>
+    </tr>
+</table>
 
     <div class="center-title">
         Students’ Admission and Facilitative Enhancement (S.A.F.E.) Center
@@ -292,15 +294,26 @@
         </td>
 
         <!-- RIGHT SIDE: Photo -->
-        <td class="student-info-right">
-            {% if student_photo_base64 %}
-                <img
-                    src="data:image/jpeg;base64,{{ student_photo_base64 }}"
-                    class="student-photo"
-                >
-            {% else %}
-                <div class="student-photo placeholder"></div>
-            {% endif %}
+        <td class="student-info-right" style="text-align:center; vertical-align:top;">
+
+            <table border="1" width="120" height="120" style="border-collapse:collapse;">
+                <tr>
+                    <td align="center" valign="middle"
+                        style="width:120px; height:120px;">
+
+                        {% if student_photo_base64 %}
+                            <img src="data:image/jpeg;base64,{{ student_photo_base64 }}"
+                                style="width:120px; height:120px;">
+                        {% else %}
+                            <div style="height:120px; line-height:120px;">
+                                &nbsp;
+                            </div>
+                        {% endif %}
+
+                    </td>
+                </tr>
+            </table>
+
         </td>
     </tr>
 </table>
@@ -337,7 +350,7 @@
     </div>
 
 {% if predicted_programs %}
-<div class="ml-8 mr-8 mt-2">
+<div class="ml-8 mr-8 mt-1">
     <h2>
         🎓 Recommended Programs Based on Top Letters ({{ top_letters | join(", ") }})
     </h2>
@@ -353,15 +366,38 @@
 {% endif %}
 
     <!-- NOTES -->
-    <div class="notes-box"></div>
+<table width="100%" border="1" style="margin-top:10px; border-collapse:collapse;">
+    <tr>
+        <td style="height:180px; line-height:180px;">
+            &nbsp;
+        </td>
+    </tr>
+</table>
 
-    <!-- SIGNATORY -->
-    <div class="signatory">
-        <div class="wrapper">
-            <div class="name">{{ guidance_counselor }}</div>
-            <div class="title">Guidance Counselor</div>
-        </div>
-    </div>
+<div class="signatory">
+
+    <table width="60%">
+        <tr>
+            <td align="left">
+
+                <table>
+                    <tr>
+                        <td style="font-weight:bold; font-size:13px; text-align:center;">
+                            <p style="border-bottom:1px solid #000;">{{ guidance_counselor }}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size:11px; padding-top:2px; text-align:center;">
+                            Guidance Counselor
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</div>
 
 </div>
 

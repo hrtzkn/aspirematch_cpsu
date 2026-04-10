@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, send_file, current_app, make_response
 from ..db import get_db_connection
 import os
 import pandas as pd
@@ -8,6 +8,7 @@ import json
 import re
 from werkzeug.utils import secure_filename
 from PIL import Image
+from xhtml2pdf import pisa
 from io import BytesIO
 from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -58,6 +59,17 @@ def is_password_strong(pw):
         re.search(r"[0-9]", pw) and
         re.search(r"[^A-Za-z0-9]", pw)
     )
+
+def generate_pdf_from_html(html_content, filename="output.pdf"):
+    pdf_io = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=pdf_io)
+    if pisa_status.err:
+        return f"Error generating PDF: {pisa_status.err}", 500
+    pdf_io.seek(0)
+    response = make_response(pdf_io.read())
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
 
 def image_to_base64(filename):
     path = os.path.join(
@@ -2352,8 +2364,10 @@ def download_result(exam_id):
     if not exam_id:
         flash("Invalid request.")
         return redirect(url_for('admin.dashboard'))
-    
-    admin_username = session["admin_username"]
+
+    admin_username = session.get("admin_username")
+    if not admin_username:
+        return redirect(url_for("admin.login"))
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -2361,11 +2375,8 @@ def download_result(exam_id):
     # --- Get admin info ---
     cur.execute("SELECT fullname, campus FROM super_admin WHERE username = %s", (admin_username,))
     super_admin = cur.fetchone()
-    is_super_admin = bool(super_admin)
-
     if super_admin:
-        admin_fullname = super_admin[0]
-        admin_campus = super_admin[1]
+        admin_fullname, admin_campus = super_admin
     else:
         cur.execute("SELECT fullname, campus FROM admin WHERE username = %s", (admin_username,))
         admin = cur.fetchone()
@@ -2373,9 +2384,9 @@ def download_result(exam_id):
             cur.close()
             conn.close()
             return redirect(url_for("admin.login"))
-        admin_fullname = admin[0]
-        admin_campus = admin[1]
+        admin_fullname, admin_campus = admin
 
+    # --- Get student + survey data ---
     cur.execute("""
         SELECT s.exam_id, s.fullname, s.school_year, s.campus, s.photo,
                c.campus_name, c.guidance_counselor,
@@ -2401,16 +2412,16 @@ def download_result(exam_id):
         FROM student s
         LEFT JOIN student_survey_answer sa ON s.exam_id = sa.exam_id
         LEFT JOIN campus c ON s.campus = c.campus_name
-        WHERE s.exam_id = %s;
+        WHERE s.exam_id = %s
     """, (exam_id,))
 
     row = cur.fetchone()
-
     if not row:
+        cur.close()
+        conn.close()
         return "Survey results not found", 404
 
     year = row[2]
-
     student_data = {
         "exam_id": row[0],
         "fullname": row[1],
@@ -2423,30 +2434,49 @@ def download_result(exam_id):
         "ai_explanation": format_ai_explanation_for_pdf(row[8]),
         "answers": [row[i] for i in range(9, 95)]
     }
-    
+
+    # --- Campus info ---
     cur.execute("SELECT campus_name, campus_address FROM campus")
     campus_info = {c[0]: c[1] for c in cur.fetchall()}
 
-    answers_clean = [a for a in student_data["answers"] if a]
-    letter_counts = Counter(answers_clean)
-    top_letters = [l for l, _ in letter_counts.most_common(3)]
-
+    answers_clean = student_data["answers"]
     preferred = student_data["preferred_program"]
+    top_letters = []
+    program_letters = []
+
+    if answers_clean:
+        letter_counts = Counter(answers_clean)
+        top_letters = [letter for letter, _ in letter_counts.most_common(3)]
+        top_letters = [letter.strip().upper() for letter in top_letters]
+
+    if preferred:
+        cur.execute("""
+            SELECT category_letter 
+            FROM program 
+            WHERE LOWER(TRIM(program_name)) = LOWER(TRIM(%s))
+            AND LOWER(TRIM(campus)) = LOWER(TRIM(%s))
+            LIMIT 1
+        """, (preferred, student_data["campus"]))
+
+        result = cur.fetchone()
+
+        if result and result[0]:
+            program_letters = [letter.strip().upper() for letter in result[0].split(",")]
+        else:
+            program_letters = []
+
     if not preferred and not answers_clean:
         match_status = "Not Yet Answer"
-    elif preferred in preferred_program_map and any(
-        l in preferred_program_map[preferred] for l in top_letters
-    ):
+    elif any(letter in program_letters for letter in top_letters):
         match_status = "Match"
     else:
         match_status = "Not Match"
 
+    # --- Predicted programs ---
     predicted_programs = []
-
     if top_letters:
         conditions = " OR ".join(["category_letter ILIKE %s"] * len(top_letters))
         values = [f"%{letter}%" for letter in top_letters]
-
         query = f"""
             SELECT DISTINCT ON (program_name) program_name, category_letter
             FROM program
@@ -2455,24 +2485,20 @@ def download_result(exam_id):
             ORDER BY program_name
             LIMIT 5
         """
-
         values.append(student_data["campus"])
         cur.execute(query, values)
         predicted_programs = cur.fetchall()
 
-    student_photo_base64 = None
-
-    student_photo_base64 = student_photo_to_base64(student_data.get("photo"))
-
-    cur.execute("SELECT campus_name, campus_address FROM campus")
-    campus_info = {c[0]: c[1] for c in cur.fetchall()}
-
+    # --- Images ---
     cpsu_logo = image_to_base64("cpsulogo.png")
     bagong_logo = image_to_base64("bagong-pilipinas-logo.png")
     safe_logo = image_to_base64("logo.png")
-    
-    from weasyprint import HTML
+    student_photo_base64 = student_photo_to_base64(student_data.get("photo"))
 
+    cur.close()
+    conn.close()
+
+    # --- Render HTML ---
     html = render_template(
         "admin/adminSurveyResultPDF.html",
         guidance_counselor=student_data["guidance_counselor"],
@@ -2492,12 +2518,16 @@ def download_result(exam_id):
         student_photo_base64=student_photo_base64
     )
 
+    # --- Convert HTML to PDF ---
     pdf_io = BytesIO()
-    HTML(string=html, base_url=current_app.root_path).write_pdf(pdf_io)
+    pisa_status = pisa.CreatePDF(html, dest=pdf_io)
+    if pisa_status.err:
+        return "Error generating PDF", 500
     pdf_io.seek(0)
 
     filename = f"Career_Survey_Result_{student_data['exam_id']}_{student_data['fullname']}.pdf"
 
+    # --- Send PDF response ---
     return send_file(
         pdf_io,
         mimetype="application/pdf",
@@ -2847,7 +2877,7 @@ def download_admin_inventory_pdf(student_id):
     cur.execute("""
         SELECT 
             s.id AS id,
-            s.fullname, s.gender, s.email, s.campus, s.photo,
+            s.fullname, s.exam_id, s.gender, s.email, s.campus, s.photo,
             sa.nickname, sa.present_address, sa.provincial_address,
             sa.date_of_birth, sa.place_of_birth, sa.age, sa.birth_order, sa.siblings_count,
             sa.civil_status, sa.religion, sa.nationality,
@@ -2913,9 +2943,6 @@ def download_admin_inventory_pdf(student_id):
 
     cpsu_logo_base64 = image_to_base64("cpsulogo.png")
 
-    
-    from weasyprint import HTML
-
     html = render_template(
         "admin/adminInventoryResultPDF.html",
         admin_username=session["admin_username"],
@@ -2929,12 +2956,16 @@ def download_admin_inventory_pdf(student_id):
         cpsu_logo_base64=cpsu_logo_base64
     )
 
+    # --- Convert HTML to PDF ---
     pdf_io = BytesIO()
-    HTML(string=html, base_url=current_app.root_path).write_pdf(pdf_io)
+    pisa_status = pisa.CreatePDF(html, dest=pdf_io)
+    if pisa_status.err:
+        return "Error generating PDF", 500
     pdf_io.seek(0)
 
-    filename = f"Inventory_{info['fullname'].replace(' ', '_')}.pdf"
+    filename = f"Inventory_Result_{info['exam_id']}_{info['fullname'].replace(' ', '_')}.pdf"
 
+    # --- Send PDF response ---
     return send_file(
         pdf_io,
         mimetype="application/pdf",

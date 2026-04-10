@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, make_response, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, make_response, send_file, current_app, make_response
 from ..db import get_db_connection
 from psycopg2.extras import RealDictCursor
 import psycopg2
@@ -6,6 +6,7 @@ import psycopg2.extras
 import os
 import re
 from werkzeug.utils import secure_filename
+from xhtml2pdf import pisa
 from io import BytesIO
 import base64
 import smtplib
@@ -26,6 +27,17 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def generate_pdf_from_html(html_content, filename="output.pdf"):
+    pdf_io = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=pdf_io)
+    if pisa_status.err:
+        return f"Error generating PDF: {pisa_status.err}", 500
+    pdf_io.seek(0)
+    response = make_response(pdf_io.read())
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
 
 def image_to_base64(filename):
     path = os.path.join(
@@ -2038,11 +2050,23 @@ def download_pdf(student_id):
     if answers_clean:
         letter_counts = Counter(answers_clean)
         top_letters = [letter for letter, _ in letter_counts.most_common(3)]
+        top_letters = [letter.strip().upper() for letter in top_letters]
 
     if preferred:
-        cur.execute("SELECT category_letter FROM program WHERE program_name = %s", (preferred,))
+        cur.execute("""
+            SELECT category_letter 
+            FROM program 
+            WHERE LOWER(TRIM(program_name)) = LOWER(TRIM(%s))
+            AND LOWER(TRIM(campus)) = LOWER(TRIM(%s))
+            LIMIT 1
+        """, (preferred, student_data["campus"]))
+
         result = cur.fetchone()
-        program_letters = result[0].split(",") if result else []
+
+        if result and result[0]:
+            program_letters = [letter.strip().upper() for letter in result[0].split(",")]
+        else:
+            program_letters = []
 
     if not preferred and not answers_clean:
         match_status = "Not Yet Answer"
@@ -2058,12 +2082,15 @@ def download_pdf(student_id):
         values = [f"%{letter}%" for letter in top_letters]
 
         query = f"""
-            SELECT program_name, category_letter
+            SELECT DISTINCT ON (program_name) program_name, category_letter
             FROM program
-            WHERE {conditions}
+            WHERE ({conditions})
+            AND TRIM(LOWER(campus)) = TRIM(LOWER(%s))
             ORDER BY program_name
             LIMIT 5
         """
+
+        values.append(student_data["campus"])
         cur.execute(query, values)
         predicted_programs = cur.fetchall()
 
@@ -2093,15 +2120,18 @@ def download_pdf(student_id):
         student_photo_base64=student_photo_base64
     )
 
-    pdf_file = generate_pdf(html)
+    # --- Convert HTML to PDF ---
+    pdf_io = BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=pdf_io)
+    if pisa_status.err:
+        return "Error generating PDF", 500
+    pdf_io.seek(0)
 
     filename = f"Career_Survey_Result_{student_data['exam_id']}_{student_data['fullname']}.pdf"
 
-    print("PHOTO FILE:", student_data["photo"])
-    print("PHOTO BASE64:", bool(student_photo_base64))
-
+    # --- Send PDF response ---
     return send_file(
-        pdf_file,
+        pdf_io,
         mimetype="application/pdf",
         download_name=filename,
         as_attachment=True
@@ -3120,12 +3150,18 @@ def download_inventory_pdf(student_id):
         student_photo_base64=student_photo_base64,
     )
 
-    pdf_file = generate_pdf(html)
+    # --- Convert HTML to PDF ---
+    pdf_io = BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=pdf_io)
+    if pisa_status.err:
+        return "Error generating PDF", 500
+    pdf_io.seek(0)
 
     filename = f"Inventory_Result_{student_data['exam_id']}_{student_data['fullname'].replace(' ', '_')}.pdf"
 
+    # --- Send PDF response ---
     return send_file(
-        pdf_file,
+        pdf_io,
         mimetype="application/pdf",
         download_name=filename,
         as_attachment=True
