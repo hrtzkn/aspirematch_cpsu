@@ -6,9 +6,7 @@ gunicorn
 pandas
 numpy
 
-xhtml2pdf==0.2.11
-reportlab==3.6.12
-svglib==1.5.0
+playwright==1.40.0
 
 Werkzeug==2.2.3
 Jinja2==3.1.2
