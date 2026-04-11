@@ -219,29 +219,6 @@ If you did not request this, please ignore this email."""
     except Exception as e:
         current_app.logger.error(f"❌ SendGrid exception: {e}")
         return False
-    
-def force_reset_password():
-    new_password = "Frequency1klhz?"  # 🔴 hardcoded password (TEMP ONLY)
-
-    hashed = bcrypt.hashpw(
-        new_password.encode('utf-8'),
-        bcrypt.gensalt()
-    ).decode('utf-8')
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        UPDATE admin
-        SET password = %s
-        WHERE username = %s
-    """, (hashed, "admin"))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    print("Password reset successful")
 
 @admin_bp.route("/test-db")
 def test_db():
