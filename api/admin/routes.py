@@ -275,17 +275,40 @@ def login():
         cur.close()
         conn.close()
 
-        if user and check_password_hash(user["password"], password):
-            session.clear()
-            session["admin_username"] = username
-            session["admin_role"] = user_type
-            session["campus"] = campus
-            session["last_activity"] = datetime.now(timezone.utc)
-            session.permanent = True
-            session["admin_login_attempts"] = 0
-            session["admin_lock_until"] = None
+        if user:
+            try:
+                valid = check_password_hash(user["password"], password)
+            except ValueError:
+                # ❌ scrypt not supported → treat as invalid
+                valid = False
 
-            return redirect(url_for("admin.dashboard"))
+            if valid:
+                # 🔄 Auto-upgrade old hashes to pbkdf2
+                if user["password"].startswith("scrypt"):
+                    new_hash = generate_password_hash(password, method="pbkdf2:sha256")
+
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    table = "admin" if user_type == "admin" else "super_admin"
+
+                    cur.execute(
+                        f"UPDATE {table} SET password = %s WHERE username = %s",
+                        (new_hash, username)
+                    )
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+
+                    session.clear()
+                    session["admin_username"] = username
+                    session["admin_role"] = user_type
+                    session["campus"] = campus
+                    session["last_activity"] = datetime.now(timezone.utc)
+                    session.permanent = True
+                    session["admin_login_attempts"] = 0
+                    session["admin_lock_until"] = None
+
+                    return redirect(url_for("admin.dashboard"))
 
         ip = request.headers.get("X-Forwarded-For", request.remote_addr)
 
@@ -827,7 +850,7 @@ def addSuper():
             message = "Username or Email already exists!"
             category = "danger"
         else:
-            hashed_password = generate_password_hash(password)
+            hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
 
             cur.execute("""
                 INSERT INTO super_admin (fullname, username, email, password, campus, created_at)
@@ -912,7 +935,7 @@ def addAdmin():
                 admin_campus=admin_campus
             )
 
-        hashed_pw = generate_password_hash(password)
+        hashed_pw = generate_password_hash(password, method="pbkdf2:sha256")
 
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
