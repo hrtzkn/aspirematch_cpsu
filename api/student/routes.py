@@ -6,7 +6,7 @@ import psycopg2.extras
 import os
 import re
 from werkzeug.utils import secure_filename
-from playwright.sync_api import sync_playwright
+from xhtml2pdf import pisa
 from io import BytesIO
 import base64
 import smtplib
@@ -27,6 +27,19 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def generate_pdf_from_html(html):
+    result = BytesIO()
+
+    pdf = pisa.CreatePDF(
+        html,
+        dest=result
+    )
+
+    if pdf.err:
+        return None
+
+    return result.getvalue()
 
 def image_to_base64(filename):
     path = os.path.join(
@@ -2091,154 +2104,7 @@ def download_pdf(student_id):
     bagong_logo = image_to_base64("bagong-pilipinas-logo.png")
     safe_logo = image_to_base64("logo.png")
     
-    url = request.host_url + f"student/surveyResultPDF/{student_id}"
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            args=["--no-sandbox", "--disable-setuid-sandbox"]
-        )
-
-        page = browser.new_page()
-
-        # Load your FULL HTML page
-        page.goto(url, wait_until="networkidle")
-
-        # Generate PDF (THIS keeps your CSS + layout)
-        pdf_bytes = page.pdf(
-            format="Letter",
-            print_background=True
-        )
-
-        browser.close()
-
-    return send_file(
-        BytesIO(pdf_bytes),
-        as_attachment=True,
-        download_name=f"Career_Interest_Result_{student_data['exam_id']}_{student_data['fullname']}.pdf",
-        mimetype="application/pdf"
-    )
-
-@student_bp.route('/surveyResultPDF/<int:student_id>')
-def surveyResultPDF(student_id):
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT s.exam_id, s.fullname, s.school_year, s.campus, s.photo,
-               c.campus_name, c.campus_address, c.guidance_counselor,
-               sa.preferred_program, sa.ai_explanation,
-               sa.pair1, sa.pair2, sa.pair3, sa.pair4, sa.pair5,
-               sa.pair6, sa.pair7, sa.pair8, sa.pair9, sa.pair10,
-               sa.pair11, sa.pair12, sa.pair13, sa.pair14, sa.pair15,
-               sa.pair16, sa.pair17, sa.pair18, sa.pair19, sa.pair20,
-               sa.pair21, sa.pair22, sa.pair23, sa.pair24, sa.pair25,
-               sa.pair26, sa.pair27, sa.pair28, sa.pair29, sa.pair30,
-               sa.pair31, sa.pair32, sa.pair33, sa.pair34, sa.pair35,
-               sa.pair36, sa.pair37, sa.pair38, sa.pair39, sa.pair40,
-               sa.pair41, sa.pair42, sa.pair43, sa.pair44, sa.pair45,
-               sa.pair46, sa.pair47, sa.pair48, sa.pair49, sa.pair50,
-               sa.pair51, sa.pair52, sa.pair53, sa.pair54, sa.pair55,
-               sa.pair56, sa.pair57, sa.pair58, sa.pair59, sa.pair60,
-               sa.pair61, sa.pair62, sa.pair63, sa.pair64, sa.pair65,
-               sa.pair66, sa.pair67, sa.pair68, sa.pair69, sa.pair70,
-               sa.pair71, sa.pair72, sa.pair73, sa.pair74, sa.pair75,
-               sa.pair76, sa.pair77, sa.pair78, sa.pair79, sa.pair80,
-               sa.pair81, sa.pair82, sa.pair83, sa.pair84, sa.pair85,
-               sa.pair86
-        FROM student s
-        LEFT JOIN student_survey_answer sa 
-            ON s.exam_id = sa.exam_id
-        LEFT JOIN campus c
-            ON s.campus = c.campus_name
-        WHERE s.id = %s;
-    """, (student_id,))
-
-    row = cur.fetchone()
-
-    if not row:
-        cur.close()
-        conn.close()
-        return "Survey results not found", 404
-
-    year = row[2] if row[2] else "N/A"
-
-    student_data = {
-        "exam_id": row[0],
-        "fullname": row[1],
-        "school_year": row[2],
-        "campus": row[3],
-        "photo": row[4],
-        "campus_name": row[5],
-        "campus_address": row[6],
-        "guidance_counselor": row[7],
-        "preferred_program": row[8],
-        "ai_explanation": format_ai_explanation_for_pdf(row[9]),
-        "answers": [row[i] for i in range(10, 96)]
-    }
-
-    answers_clean = student_data["answers"]
-    preferred = student_data["preferred_program"]
-
-    top_letters = []
-    program_letters = []
-
-    if answers_clean:
-        letter_counts = Counter(answers_clean)
-        top_letters = [letter for letter, _ in letter_counts.most_common(3)]
-        top_letters = [letter.strip().upper() for letter in top_letters]
-
-    if preferred:
-        cur.execute("""
-            SELECT category_letter 
-            FROM program 
-            WHERE LOWER(TRIM(program_name)) = LOWER(TRIM(%s))
-            AND LOWER(TRIM(campus)) = LOWER(TRIM(%s))
-            LIMIT 1
-        """, (preferred, student_data["campus"]))
-
-        result = cur.fetchone()
-
-        if result and result[0]:
-            program_letters = [letter.strip().upper() for letter in result[0].split(",")]
-        else:
-            program_letters = []
-
-    if not preferred and not answers_clean:
-        match_status = "Not Yet Answer"
-    elif any(letter in program_letters for letter in top_letters):
-        match_status = "Match"
-    else:
-        match_status = "Not Match"
-
-    predicted_programs = []
-
-    if top_letters:
-        conditions = " OR ".join(["category_letter ILIKE %s"] * len(top_letters))
-        values = [f"%{letter}%" for letter in top_letters]
-
-        query = f"""
-            SELECT DISTINCT ON (program_name) program_name, category_letter
-            FROM program
-            WHERE ({conditions})
-            AND TRIM(LOWER(campus)) = TRIM(LOWER(%s))
-            ORDER BY program_name
-            LIMIT 5
-        """
-
-        values.append(student_data["campus"])
-        cur.execute(query, values)
-        predicted_programs = cur.fetchall()
-
-    student_photo_base64 = None
-
-    student_photo_base64 = student_photo_to_base64(student_data.get("photo"))
-
-    cpsu_logo = image_to_base64("cpsulogo.png")
-    bagong_logo = image_to_base64("bagong-pilipinas-logo.png")
-    safe_logo = image_to_base64("logo.png")
-
-    return render_template(
+    html = render_template(
         "student/surveyResultPDF.html",
         year=year,
         student_data=student_data,
@@ -2255,6 +2121,21 @@ def surveyResultPDF(student_id):
         safe_logo_base64=safe_logo,
         student_photo_base64=student_photo_base64
     )
+
+    # ✅ GENERATE PDF
+    pdf = generate_pdf_from_html(html)
+
+    if not pdf:
+        return "Error generating PDF", 500
+
+    filename = secure_filename(f"Career_Interest_Result_{student_data['exam_id']}_{student_data['fullname']}.pdf")
+
+    response = make_response(pdf)
+    response.headers.clear()  # 🔥 clears any duplicate headers
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
 
 @student_bp.route("/studentInventory")
 def studentInventory():
@@ -3258,163 +3139,7 @@ def download_inventory_pdf(student_id):
 
     cpsu_logo_base64 = image_to_base64("cpsulogo.png")
     
-    url = request.host_url + f"student/studentInventoryResultPDF/{student_id}"
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            args=["--no-sandbox", "--disable-setuid-sandbox"]
-        )
-
-        page = browser.new_page()
-
-        # Load your FULL HTML page
-        page.goto(url, wait_until="networkidle")
-
-        # Generate PDF (THIS keeps your CSS + layout)
-        pdf_bytes = page.pdf(
-            format="Legal",
-            print_background=True,
-            margin={
-                "top": "0.5in",
-                "right": "0.5in",
-                "bottom": "0.5in",
-                "left": "0.5in"
-            }
-        )
-
-        browser.close()
-
-    return send_file(
-        BytesIO(pdf_bytes),
-        as_attachment=True,
-        download_name=f"Inventory_Result_{info['fullname']}.pdf",
-        mimetype="application/pdf"
-    )
-
-@student_bp.route('/studentInventoryResultPDF/<int:student_id>')
-def studentInventoryResultPDF(student_id):
-
-    conn = get_db_connection()
-
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cur.execute("""
-        SELECT 
-            s.id AS id,
-            s.exam_id, s.fullname, s.gender, s.email, s.campus, s.photo,
-            c.campus_name, c.campus_address,
-            sa.nickname, sa.present_address, sa.provincial_address,
-            sa.date_of_birth, sa.place_of_birth, sa.age, sa.birth_order, sa.siblings_count,
-            sa.civil_status, sa.religion, sa.nationality,
-            sa.home_phone, sa.mobile_no, sa.email AS personal_email,
-            sa.weight, sa.height, sa.blood_type, sa.hobbies, sa.talents,
-            sa.emergency_name, sa.emergency_relationship, sa.emergency_address, sa.emergency_contact,
-            sb.father_name, sb.father_age, sb.father_education, sb.father_occupation,
-            sb.father_income, sb.father_contact, sb.mother_name, sb.mother_age, sb.mother_education,
-            sb.mother_occupation, sb.mother_income, sb.mother_contact, 
-            sc.parent_status, sc.father_another_family, sc.mother_another_family,
-            sd.elementary_school_name, sd.elementary_year_graduated, sd.elementary_awards,
-            sd.junior_high_school_name, sd.junior_high_year_graduated, sd.junior_high_awards,
-            sd.senior_high_school_name, sd.senior_high_year_graduated, sd.senior_high_awards,
-            sd.senior_high_track, sd.senior_high_strand, sd.subject_interested, sd.org_membership,
-            sd.study_finance, sd.course_personal_choice, sd.influenced_by, sd.feeling_about_course, sd.personal_choice,
-            se.bullying, se.bullying_when, se.bullying_bother,
-            se.suicidal_thoughts, se.suicidal_thoughts_when, se.suicidal_thoughts_bother,
-            se.suicidal_attempts, se.suicidal_attempts_when, se.suicidal_attempts_bother,
-            se.panic_attacks, se.panic_attacks_when, se.panic_attacks_bother,
-            se.anxiety, se.anxiety_when, se.anxiety_bother,
-            se.depression, se.depression_when, se.depression_bother,
-            se.self_anger_issues, se.self_anger_issues_when, se.self_anger_issues_bother,
-            se.recurring_negative_thoughts, se.recurring_negative_thoughts_when, se.recurring_negative_thoughts_bother,
-            se.low_self_esteem, se.low_self_esteem_when, se.low_self_esteem_bother,
-            se.poor_study_habits, se.poor_study_habits_when, se.poor_study_habits_bother,
-            se.poor_in_decision_making, se.poor_in_decision_making_when, se.poor_in_decision_making_bother,
-            se.impulsivity, se.impulsivity_when, se.impulsivity_bother,
-            se.poor_sleeping_habits, se.poor_sleeping_habits_when, se.poor_sleeping_habits_bother,
-            se.loss_of_appetite, se.loss_of_appetite_when, se.loss_of_appetite_bother,
-            se.over_eating, se.over_eating_when, se.over_eating_bother,
-            se.poor_hygiene, se.poor_hygiene_when, se.poor_hygiene_bother,
-            se.withdrawal_isolation, se.withdrawal_isolation_when, se.withdrawal_isolation_bother,
-            se.family_problem, se.family_problem_when, se.family_problem_bother,
-            se.other_relationship_problem, se.other_relationship_problem_when, se.other_relationship_problem_bother,
-            se.alcohol_addiction, se.alcohol_addiction_when, se.alcohol_addiction_bother,
-            se.gambling_addiction, se.gambling_addiction_when, se.gambling_addiction_bother,
-            se.drug_addiction, se.drug_addiction_when, se.drug_addiction_bother,
-            se.computer_addiction, se.computer_addiction_when, se.computer_addiction_bother,
-            se.sexual_harassment, se.sexual_harassment_when, se.sexual_harassment_bother,
-            se.sexual_abuse, se.sexual_abuse_when, se.sexual_abuse_bother,
-            se.physical_abuse, se.physical_abuse_when, se.physical_abuse_bother,
-            se.verbal_abuse, se.verbal_abuse_when, se.verbal_abuse_bother,
-            se.pre_marital_sex, se.pre_marital_sex_when, se.pre_marital_sex_bother,
-            se.teenage_pregnancy, se.teenage_pregnancy_when, se.teenage_pregnancy_bother,
-            se.abortion, se.abortion_when, se.abortion_bother,
-            se.extra_marital_affairs, se.extra_marital_affairs_when, se.extra_marital_affairs_bother,
-            sf.psychiatrist_before, sf.psychiatrist_reason, sf.psychiatrist_when,
-            sf.psychologist_before, sf.psychologist_reason, sf.psychologist_when,
-            sf.counselor_before, sf.counselor_reason, sf.counselor_when,
-            sg.personal_description, sg.consent, sg.consent_date, sh.course_name
-        FROM student s
-        LEFT JOIN personal_information sa ON sa.student_id = s.id
-        LEFT JOIN family_background sb ON sb.student_id = s.id
-        LEFT JOIN status_of_parent sc ON sc.student_id = s.id
-        LEFT JOIN academic_information sd ON sd.student_id = s.id
-        LEFT JOIN behavior_information se ON se.student_id = s.id
-        LEFT JOIN psychological_consultations sf ON sf.student_id = s.id
-        LEFT JOIN personal_descriptions sg ON sg.student_id = s.id
-        LEFT JOIN course sh ON sh.student_id = s.id
-        LEFT JOIN campus c ON s.campus = c.campus_name
-        WHERE s.id = %s
-    """, (student_id,))
-
-    info = cur.fetchone()
-
-    student_photo_base64 = None
-
-    if info and info["photo"]:
-        student_photo_base64 = student_photo_to_base64(info["photo"])
-
-    if not info:
-        return "Student Inventory results not found.", 404
-
-    cur.execute("""
-        SELECT reasons, other_reason
-        FROM cpsu_enrollment_reason
-        WHERE student_id = %s
-    """, (student_id,))
-    enroll_reason = cur.fetchone()
-
-    cur.execute("""
-        SELECT school_choices, other_school
-        FROM other_schools_considered
-        WHERE student_id = %s
-    """, (student_id,))
-    other_school_data = cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    student_data = {
-        "exam_id": info[1],
-        "fullname": info[2]
-    }
-
-    selected_reasons = []
-    other_reason = ""
-    if enroll_reason:
-        if enroll_reason[0]:
-            selected_reasons = [r.strip() for r in enroll_reason[0].split(",")]
-        other_reason = enroll_reason[1] or ""
-
-    other_schools_selected = []
-    other_school = ""
-    if other_school_data:
-        if other_school_data[0]:
-            other_schools_selected = [r.strip() for r in other_school_data[0].split(",")]
-        other_school = other_school_data[1] or ""
-
-    cpsu_logo_base64 = image_to_base64("cpsulogo.png")
-
-    return render_template(
+    html = render_template(
         "student/studentInventoryResultPDF.html",
         info=info,
         selected_reasons=selected_reasons,
@@ -3424,6 +3149,21 @@ def studentInventoryResultPDF(student_id):
         cpsu_logo_base64=cpsu_logo_base64,
         student_photo_base64=student_photo_base64,
     )
+
+    # ✅ GENERATE PDF
+    pdf = generate_pdf_from_html(html)
+
+    if not pdf:
+        return "Error generating PDF", 500
+
+    filename = secure_filename(f"Inventory_Result_{info['fullname']}.pdf")
+
+    response = make_response(pdf)
+    response.headers.clear()  # 🔥 clears any duplicate headers
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
 
 @student_bp.route("/profile", methods=["GET", "POST"])
 def profile():
