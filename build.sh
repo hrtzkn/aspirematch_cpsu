@@ -1,3 +1,1 @@
-pip install -r requirements.txt
-
-python -m playwright install chromium
+pip install --no-cache-dir -r requirements.txt
