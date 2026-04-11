@@ -7,7 +7,6 @@ import base64
 import json
 import re
 from werkzeug.utils import secure_filename
-from PIL import Image
 from io import BytesIO
 from playwright.sync_api import sync_playwright
 from psycopg2.extras import RealDictCursor
