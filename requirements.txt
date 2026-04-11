@@ -6,7 +6,6 @@ gunicorn
 pandas
 numpy
 
-python-3.12
 xhtml2pdf==0.2.13
 reportlab==4.0.8
 Pillow==10.2.0
