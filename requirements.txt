@@ -15,7 +15,3 @@ bcrypt==4.1.2
 
 openpyxl
 requests
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-google-api-python-client
