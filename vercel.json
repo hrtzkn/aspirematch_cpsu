@@ -1,4 +1,5 @@
 {
+  "buildCommand": "bash build.sh",
   "routes": [
     { "src": "/(.*)", "dest": "/api/app.py" }
   ]
