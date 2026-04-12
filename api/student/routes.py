@@ -6,7 +6,18 @@ import psycopg2.extras
 import os
 import re
 from werkzeug.utils import secure_filename
-from xhtml2pdf import pisa
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+)
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.enums import TA_CENTER
+from reportlab.graphics.shapes import Drawing, Line
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.platypus import Image
+from reportlab.lib.utils import ImageReader
 from io import BytesIO
 import base64
 import smtplib
@@ -28,18 +39,248 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def generate_pdf_from_html(html):
-    result = BytesIO()
-
-    pdf = pisa.CreatePDF(
-        html,
-        dest=result
+def generate_pdf_reportlab(student_data, logos, photo):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=(8.5*inch, 11*inch),
+        leftMargin=72,
+        rightMargin=72,
+        topMargin=36,
+        bottomMargin=36
     )
 
-    if pdf.err:
-        return None
+    styles = getSampleStyleSheet()
+    elements = []
 
-    return result.getvalue()
+    # =========================
+    # 1. HEADER (3 LOGOS + SCHOOL INFO)
+    # =========================
+    logo_imgs = []
+
+    for key in ["cpsu", "bagong", "safe"]:
+        if logos.get(key):
+            img = Image(BytesIO(base64.b64decode(logos[key])))
+            img.drawHeight = 50
+            img.drawWidth = 50
+            logo_imgs.append(img)
+
+    logo_table = Table([logo_imgs], colWidths=[60, 60, 60])
+    logo_table.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+
+    header_table = Table([
+        [
+            logo_table,
+            Paragraph(f"""
+                <b>Republic of the Philippines</b><br/>
+                <b><font size="10">CENTRAL PHILIPPINES STATE UNIVERSITY</font></b><br/>
+                <font size="10">{student_data.get('campus_name','')}</font><br/>
+                <font size="7">{student_data.get('campus_address','')}</font>
+            """, styles["Normal"])
+        ]
+    ], colWidths=[200, 300])
+
+    header_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LINEAFTER", (0, 0), (0, 0), 1, colors.black),
+    ]))
+
+    elements.append(header_table)
+    elements.append(Spacer(1, 12))
+
+    center_style = ParagraphStyle(
+        name="CenterTitle",
+        parent=styles["Normal"],
+        alignment=TA_CENTER,
+        fontSize=11,
+        leading=14,
+    )
+
+    elements.append(Paragraph(
+        "<b>Students’ Admission and Facilitative Enhancement (S.A.F.E.) Center</b>",
+        center_style
+    ))
+
+    line = Drawing(450, 10)
+    line.add(Line(0, 5, 450, 5))
+    elements.append(line)
+
+    elements.append(Paragraph(
+        "<b>Career Interest Survey Result</b>",
+        center_style
+    ))
+
+    elements.append(Spacer(1, 12))
+
+    # =========================
+    # 2. STUDENT INFO + PHOTO (SAME ROW)
+    # =========================
+
+    styles = getSampleStyleSheet()
+
+    # --- STUDENT INFO (LEFT SIDE) ---
+    info_paragraph = Paragraph(f"""
+        <b>Exam ID:</b> {student_data['exam_id']}<br/><br/>
+        <b>Name:</b> {student_data['fullname']}<br/><br/>
+        <b>SY:</b> {student_data['school_year']}<br/><br/>
+        <b>Preferred Program:</b><br/> {student_data['preferred_program']}
+    """, styles["Normal"])
+
+    # --- PHOTO (RIGHT SIDE) ---
+    photo_element = None
+
+    try:
+        if photo:
+
+            img_data = None
+
+            # ✅ CASE 1: BASE64 IMAGE
+            if isinstance(photo, str) and len(photo) > 200:
+                img_data = base64.b64decode(photo)
+
+            # ✅ CASE 2: FILE NAME
+            else:
+                path = os.path.join(
+                    current_app.static_folder,
+                    "uploads",
+                    "students",
+                    photo
+                )
+
+                if os.path.exists(path):
+                    with open(path, "rb") as f:
+                        img_data = f.read()
+
+            # ✅ CREATE IMAGE IF VALID
+            if img_data:
+                img = Image(BytesIO(img_data))
+                img.drawWidth = 120
+                img.drawHeight = 120
+                photo_element = img
+
+        # ❌ NO IMAGE → BORDER BOX
+        if not photo_element:
+            photo_element = Table(
+                [[""]],
+                colWidths=120,
+                rowHeights=120,
+                style=[
+                    ("BOX", (0, 0), (-1, -1), 1, colors.black),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                ]
+            )
+
+    except Exception as e:
+        print("PHOTO ERROR:", e)
+
+        photo_element = Table(
+            [[""]],
+            colWidths=120,
+            rowHeights=120,
+            style=[
+                ("BOX", (0, 0), (-1, -1), 1, colors.black),
+            ]
+        )
+
+    # --- SAME ROW TABLE ---
+    info_table = Table([
+        [info_paragraph, photo_element]
+    ], colWidths=[380, 120])
+
+    info_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (1, 0), (1, 0), "CENTER"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+    ]))
+
+    elements.append(info_table)
+    elements.append(Spacer(1, 6))
+
+    # =========================
+    # 3. MOST CHOSEN LETTER + MATCH STATUS
+    # =========================
+    elements.append(Paragraph("<b>Most Chosen Letters</b>", styles["Heading2"]))
+    from ..description import letter_descriptions
+    for letter in student_data.get("top_letters", []):
+        desc = letter_descriptions.get(letter, "No description available")
+        elements.append(Paragraph(f"<b>{letter}:</b> {desc}", styles["Normal"]))
+
+    elements.append(Spacer(1, 10))
+
+    match = student_data.get("match_status", "")
+
+    color = colors.green if match == "Match" else colors.red
+
+    elements.append(Paragraph(
+        f"<b>The preferred program and most chosen letter is </b> <font color='{color}'>{match}</font>",
+        styles["Normal"]
+    ))
+
+    elements.append(Spacer(1, 12))
+
+    # =========================
+    # 4. RECOMMENDED PROGRAMS
+    # =========================
+    elements.append(Paragraph("<b>Recommended Programs</b>", styles["Heading2"]))
+
+    for prog in student_data.get("predicted_programs", []):
+        elements.append(Paragraph(f"- {prog[0]}", styles["Normal"]))
+
+    elements.append(Spacer(1, 12))
+
+    # =========================
+    # 5. NOTE BOX + SIGNATORY
+    # =========================
+    note_box = Table([[""]], colWidths=450, rowHeights=120)
+    note_box.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    elements.append(note_box)
+    elements.append(Spacer(1, 20))
+
+    gc_table = Table([
+        [
+            Paragraph(f"<b>{student_data.get('guidance_counselor','')}</b>", styles["Normal"])
+        ],
+        [
+            Paragraph("Guidance Counselor", styles["Normal"])
+        ]
+    ], colWidths=250)
+
+    gc_table.setStyle(TableStyle([
+        # LEFT align whole block
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+
+        # but center ONLY the second row text
+        ("ALIGN", (0, 1), (0, 5), "CENTER"),
+
+        # spacing
+        ("TOPPADDING", (0, 0), (-1, -1), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+
+        # line under name
+        ("LINEBELOW", (0, 0), (0, 0), 1, colors.black),
+    ]))
+
+    wrapper = Table([[gc_table]], colWidths=[500])
+
+    wrapper.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+    ]))
+
+    elements.append(Spacer(1, 20))
+    elements.append(wrapper)
+
+    # BUILD PDF
+    doc.build(elements)
+
+    buffer.seek(0)
+    return buffer.getvalue()
 
 def image_to_base64(filename):
     path = os.path.join(
@@ -2042,6 +2283,21 @@ def download_pdf(student_id):
         "ai_explanation": format_ai_explanation_for_pdf(row[9]),
         "answers": [row[i] for i in range(10, 96)]
     }
+    
+    cur.execute("""
+        SELECT campus_name, campus_address
+        FROM campus
+        WHERE campus_name = %s
+        LIMIT 1
+    """, (student_data["campus"],))
+
+    campus_row = cur.fetchone()
+
+    campus_name = campus_row[0] if campus_row else student_data["campus"]
+    campus_address = campus_row[1] if campus_row else ""
+
+    cur.execute("SELECT campus_name, campus_address FROM campus")
+    campus_info = {c[0]: c[1] for c in cur.fetchall()}
 
     answers_clean = student_data["answers"]
     preferred = student_data["preferred_program"]
@@ -2123,15 +2379,33 @@ def download_pdf(student_id):
     )
 
     # ✅ GENERATE PDF
-    pdf = generate_pdf_from_html(html)
+    pdf = generate_pdf_reportlab(
+        {
+            **student_data,
+            "top_letters": top_letters,
+            "match_status": match_status,
+            "predicted_programs": predicted_programs,
+            "campus_name": campus_name,
+            "campus_address": campus_address
+        },
+        {
+            "cpsu": cpsu_logo,
+            "bagong": bagong_logo,
+            "safe": safe_logo
+        },
+        student_photo_base64
+    )
 
-    if not pdf:
-        return "Error generating PDF", 500
+    import re
 
-    filename = secure_filename(f"Career_Interest_Result_{student_data['exam_id']}_{student_data['fullname']}.pdf")
+    safe_exam = str(student_data.get("exam_id", "UNKNOWN"))
+
+    name = student_data.get("fullname", "UNKNOWN")
+    safe_name = re.sub(r'[^a-zA-Z0-9_]', '', name.replace(" ", "_"))
+
+    filename = f"Career_Interest_Result_{safe_exam}_{safe_name}.pdf"
 
     response = make_response(pdf)
-    response.headers.clear()  # 🔥 clears any duplicate headers
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
 
@@ -3151,7 +3425,7 @@ def download_inventory_pdf(student_id):
     )
 
     # ✅ GENERATE PDF
-    pdf = generate_pdf_from_html(html)
+    pdf = generate_pdf_reportlab(html)
 
     if not pdf:
         return "Error generating PDF", 500

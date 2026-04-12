@@ -6,7 +6,7 @@ gunicorn
 pandas
 numpy
 
-xhtml2pdf==0.2.13
+reportlab==4.0.8
 Pillow==10.2.0
 
 Werkzeug==2.2.3
@@ -15,3 +15,7 @@ bcrypt==4.1.2
 
 openpyxl
 requests
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
