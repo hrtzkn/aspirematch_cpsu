@@ -865,8 +865,8 @@
                 <td style="width: 40%; border: 1px solid #000; padding: 1px;">{% if info.pre_marital_sex %}[✔]{% else %}[ ]{% endif %} Pre-Marital Sex</td>
                 <td style="width: 30%; border: 1px solid #000; padding: 1px;">{{ info.pre_marital_sex_when or '' }}</td>
                 <td style="width: 30%; border: 1px solid #000; padding: 1px; text-align: center;">{% if info.pre_marital_sex %}
-                                {% if info['teenage_pregnancy_bother'] %} [✔] YES  [ ] NO
-                                {% elif info['teenage_pregnancy_bother'] is not none and not info['teenage_pregnancy_bother'] %} [ ] YES  [✔] NO
+                                {% if info['pre_marital_sex_bother'] %} [✔] YES  [ ] NO
+                                {% elif info['pre_marital_sex_bother'] is not none and not info['pre_marital_sex_bother'] %} [ ] YES  [✔] NO
                                 {% else %}  [ ] YES  [ ] NO {% endif %}
                             {% else %} [ ] YES  [ ] NO {% endif %}</td>
             </tr>
