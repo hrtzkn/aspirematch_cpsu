@@ -4482,6 +4482,9 @@ def download_inventory_pdf(student_id):
     if not info:
         return "Student Inventory results not found.", 404
 
+    cur.execute("SELECT campus_name, campus_address FROM campus")
+    campus_info = {c[0]: c[1] for c in cur.fetchall()}
+
     cur.execute("""
         SELECT reasons, other_reason
         FROM cpsu_enrollment_reason
@@ -4519,20 +4522,18 @@ def download_inventory_pdf(student_id):
         other_school = other_school_data[1] or ""
 
     cpsu_logo_base64 = image_to_base64("cpsulogo.png")
-    
-    html = render_template(
-        "student/studentInventoryResultPDF.html",
-        info=info,
-        selected_reasons=selected_reasons,
-        other_reason=other_reason,
-        other_schools_selected=other_schools_selected,
-        other_school=other_school,
-        cpsu_logo_base64=cpsu_logo_base64,
-        student_photo_base64=student_photo_base64,
-    )
 
     # ✅ GENERATE PDF
-    pdf = generate_pdf_reportlab(html)
+    pdf = generate_pdf_inventory_reportlab(
+        info,
+        cpsu_logo_base64,
+        student_photo_base64,
+        campus_info,
+        selected_reasons,
+        other_reason,
+        other_schools_selected,
+        other_school
+    )
 
     if not pdf:
         return "Error generating PDF", 500
