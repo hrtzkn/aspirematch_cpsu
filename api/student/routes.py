@@ -25,6 +25,7 @@ from html import unescape
 from io import BytesIO
 import base64
 import smtplib
+from email.mime.text import MIMEText
 from email.message import EmailMessage
 from collections import Counter
 from ..description import letter_descriptions, preferred_program_map, ai_responses, short_letter_descriptions
@@ -1581,58 +1582,39 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 def send_otp_email(email, otp):
-    import os
-    import requests
-    from flask import current_app
+    SMTP_SERVER = os.getenv("SMTP_SERVER")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
-    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-
-    if not SENDGRID_API_KEY:
-        current_app.logger.error("❌ SENDGRID_API_KEY not set.")
+    if not all([SMTP_SERVER, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD]):
+        current_app.logger.error("❌ SMTP environment variables not set properly.")
         return False
 
-    data = {
-        "personalizations": [
-            {
-                "to": [{"email": email}],
-                "subject": "Your AspireMatch Login OTP"
-            }
-        ],
-        "from": {"email": "aspirematch2@gmail.com"},
-        "content": [
-            {
-                "type": "text/plain",
-                "value": f"""Your One-Time Password (OTP) is:
+    msg = MIMEText(f"""Your One-Time Password (OTP) is:
 
 {otp}
 
 This code will expire in 5 minutes.
 
-If you did not request this, please ignore this email."""
-            }
-        ]
-    }
+If you did not request this, please ignore this email.
+""")
+
+    msg["Subject"] = "Your AspireMatch Login OTP"
+    msg["From"] = SMTP_EMAIL
+    msg["To"] = email
 
     try:
-        response = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            headers={
-                "Authorization": f"Bearer {SENDGRID_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json=data,
-            timeout=15
-        )
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
 
-        if response.status_code == 202:
-            current_app.logger.info("✅ OTP email sent via SendGrid.")
-            return True
-        else:
-            current_app.logger.error(f"❌ SendGrid error: {response.text}")
-            return False
+        current_app.logger.info("✅ OTP email sent via SMTP.")
+        return True
 
     except Exception as e:
-        current_app.logger.error(f"❌ SendGrid exception: {e}")
+        current_app.logger.error(f"❌ SMTP error: {e}")
         return False
     
 def generate_pdf(html):
@@ -1685,138 +1667,6 @@ LOCKOUT_MINUTES = 3
 def login_page():
     return render_template("student/studentLogin.html")
 
-@student_bp.route("/login", methods=["GET", "POST"])
-def studentlogin():
-    error = None
-    exam_error = False
-    email_error = False
-
-    if request.method == "POST":
-        exam_id = request.form["exam_id"].strip()
-        email = request.form["email"].strip()
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        # 🔎 Find student by exam_id OR email
-        cur.execute(
-            """
-            SELECT id, exam_id, email, login_attempts, lockout_until
-            FROM student
-            WHERE exam_id = %s OR email = %s
-            """,
-            (exam_id, email)
-        )
-
-        student = cur.fetchone()
-
-        if not student:
-            error = "Invalid Examination ID or Email"
-            exam_error = True
-            email_error = True
-
-        else:
-            student_id, stored_exam, stored_email, attempts, lockout_until = student
-            now = datetime.now(timezone.utc)
-
-            # 🔒 Check lock
-            if lockout_until and now < lockout_until:
-                remaining = int((lockout_until - now).total_seconds() / 60)
-                error = f"Too many failed attempts. Try again in {remaining} minutes."
-
-            else:
-
-                # Reset expired lock
-                if lockout_until and now >= lockout_until:
-                    cur.execute(
-                        "UPDATE student SET login_attempts = 0, lockout_until = NULL WHERE id = %s",
-                        (student_id,)
-                    )
-                    conn.commit()
-                    attempts = 0
-
-                # ❌ If exam_id OR email does not match
-                if stored_exam != exam_id or stored_email != email:
-
-                    attempts += 1
-
-                    if attempts >= MAX_LOGIN_ATTEMPTS:
-                        lock_time = now + timedelta(minutes=LOCKOUT_MINUTES)
-
-                        cur.execute(
-                            """
-                            UPDATE student
-                            SET login_attempts = %s,
-                                lockout_until = %s
-                            WHERE id = %s
-                            """,
-                            (attempts, lock_time, student_id)
-                        )
-
-                        error = f"Too many failed attempts. Account locked for {LOCKOUT_MINUTES} minutes."
-
-                    else:
-                        cur.execute(
-                            "UPDATE student SET login_attempts = %s WHERE id = %s",
-                            (attempts, student_id)
-                        )
-
-                        error = f"Invalid Examination ID or Email. Attempt {attempts}/{MAX_LOGIN_ATTEMPTS}"
-
-                    conn.commit()
-
-                    if stored_exam != exam_id:
-                        exam_error = True
-
-                    if stored_email != email:
-                        email_error = True
-
-                else:
-                    # ✅ Successful login
-                    cur.execute(
-                        "UPDATE student SET login_attempts = 0, lockout_until = NULL WHERE id = %s",
-                        (student_id,)
-                    )
-                    conn.commit()
-
-                    session["student_id"] = student_id
-                    session["exam_id"] = stored_exam
-                    session["last_activity"] = datetime.now(timezone.utc)
-                    session.permanent = True
-
-                    # Check if survey already answered
-                    cur.execute(
-                        """
-                        SELECT 1 FROM student_survey_answer
-                        WHERE exam_id = %s AND student_id = %s
-                        """,
-                        (stored_exam, student_id)
-                    )
-
-                    survey_row = cur.fetchone()
-
-                    cur.close()
-                    conn.close()
-
-                    if survey_row:
-                        return redirect(url_for("student.home"))
-                    else:
-                        return redirect(url_for("student.survey"))
-
-        cur.close()
-        conn.close()
-
-        return render_template(
-            "student/studentLogin.html",
-            error=error,
-            exam_error=exam_error,
-            email_error=email_error,
-            exam_id=exam_id,
-            email=email
-        )
-
-    return render_template("student/studentLogin.html")
-"""
 @student_bp.route("/login", methods=["GET", "POST"])
 def studentlogin():
     error = None
@@ -1903,7 +1753,7 @@ def studentlogin():
         return redirect(url_for("student.verify"))
 
     return render_template("student/studentLogin.html")
-"""
+
 @student_bp.route("/verify", methods=["GET", "POST"])
 def verify():
     error = None

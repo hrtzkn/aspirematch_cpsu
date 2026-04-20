@@ -2117,7 +2117,14 @@ def edit_student():
     cur.close()
     conn.close()
 
-    return redirect(url_for("admin.dashboard"))
+    return redirect(url_for(
+        "admin.dashboard",
+        q=request.form.get("q"),
+        year=request.form.get("year"),
+        campus=request.form.get("campus"),
+        success="edit",
+        message="Student updated successfully."
+    ))
 
 @admin_bp.route("/delete-student", methods=["POST"])
 def delete_student():
@@ -2127,7 +2134,12 @@ def delete_student():
     admin_username = session["admin_username"]
     role = session.get("admin_role")
 
-    student_id = request.form["student_id"]
+    ids = request.form.get("student_ids") or request.form.get("student_id")
+
+    if not ids:
+        return redirect(url_for("admin.dashboard"))
+    
+    id_list = ids.split(",")
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -2140,48 +2152,55 @@ def delete_student():
     )
     admin_campus = cur.fetchone()[0]
 
-    # ✅ Get student info
-    cur.execute("""
-        SELECT fullname, campus
-        FROM student
-        WHERE id = %s;
-    """, (student_id,))
-    student = cur.fetchone()
+    deleted_names = []
 
-    if not student:
-        cur.close()
-        conn.close()
-        return redirect(url_for("admin.dashboard"))
+    for student_id in id_list:
+        # ✅ Get student info
+        cur.execute("""
+            SELECT fullname, campus
+            FROM student
+            WHERE id = %s;
+        """, (student_id,))
+        student = cur.fetchone()
 
-    student_fullname, student_campus = student
+        if not student:
+            continue  # skip if not found
 
-    # ✅ Restrict sub-admin
-    if role != "super_admin" and student_campus != admin_campus:
-        cur.close()
-        conn.close()
-        return "Unauthorized", 403
+        student_fullname, student_campus = student
 
-    # ✅ Delete
-    cur.execute(
-        "DELETE FROM student WHERE id = %s;",
-        (student_id,)
-    )
+        # ✅ Restrict sub-admin
+        if role != "super_admin" and student_campus != admin_campus:
+            continue  # skip unauthorized instead of breaking everything
 
-    # ✅ Log
-    cur.execute("""
-        INSERT INTO admin_logs (admin_username, campus, action)
-        VALUES (%s, %s, %s);
-    """, (
-        admin_username,
-        admin_campus,
-        f"Deleted student: {student_fullname}"
-    ))
+        # ✅ Delete student
+        cur.execute(
+            "DELETE FROM student WHERE id = %s;",
+            (student_id,)
+        )
+
+        deleted_names.append(student_fullname)
+
+    # ✅ Log (single entry for bulk)
+    if deleted_names:
+        cur.execute("""
+            INSERT INTO admin_logs (admin_username, campus, action)
+            VALUES (%s, %s, %s);
+        """, (
+            admin_username,
+            admin_campus,
+            f"Deleted {len(deleted_names)} student(s): {', '.join(deleted_names)}"
+        ))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("admin.dashboard",
+        q=request.form.get("q"),
+        year=request.form.get("year"),
+        campus=request.form.get("campus"),
+        delete_success=1,
+        delete_message=f"Deleted {len(deleted_names)} student(s) successfully."))
 
 @admin_bp.route("/addSuper", methods=["GET", "POST"])
 def addSuper():
