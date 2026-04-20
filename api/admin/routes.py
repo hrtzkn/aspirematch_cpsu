@@ -33,6 +33,7 @@ from ..description import letter_descriptions, preferred_program_map, short_lett
 from math import ceil
 from groq import Groq
 import smtplib
+from email.mime.text import MIMEText
 from email.message import EmailMessage
 import random
 import time
@@ -1493,40 +1494,49 @@ def get_client_ip():
     return request.headers.get("X-Forwarded-For", request.remote_addr)
 
 def send_email(subject, to_email, body):
-    EMAIL_USER = os.getenv("EMAIL_USER")
-    EMAIL_PASS = os.getenv("EMAIL_PASS")
+    SMTP_SERVER = os.getenv("SMTP_SERVER")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
-    if not EMAIL_USER or not EMAIL_PASS:
-        current_app.logger.error("Email credentials not configured")
+    if not all([SMTP_SERVER, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD]):
+        current_app.logger.error("❌ SMTP environment variables not set properly.")
         return False
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = EMAIL_USER
+    msg["From"] = SMTP_EMAIL
     msg["To"] = to_email
     msg.set_content(body)
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(EMAIL_USER, EMAIL_PASS)
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+            server.starttls()  # ✅ IMPORTANT (Vercel-friendly)
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
             server.send_message(msg)
+
+        current_app.logger.info("✅ Email sent successfully.")
         return True
 
     except Exception as e:
-        current_app.logger.error(f"Email send failed: {e}")
+        current_app.logger.error(f"❌ Email send failed: {e}")
         return False
+
 
 def send_security_alert(ip, username):
     body = f"""
-Suspicious admin login detected.
+⚠️ Suspicious admin login detected
 
 Username: {username}
 IP Address: {ip}
-Time: {datetime.now(timezone.utc)}
+Time (UTC): {datetime.now(timezone.utc)}
+
+If this was not you, please secure your account immediately.
 """
+
     return send_email(
         subject="⚠️ Admin Login Alert",
-        to_email=os.getenv("SECURITY_ALERT_EMAIL", "hertzkin@gmail.com"),
+        to_email=os.getenv("SECURITY_ALERT_EMAIL", os.getenv("SMTP_EMAIL")),
         body=body
     )
 
@@ -1534,51 +1544,39 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 def send_otp_email(email, otp):
-    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+    SMTP_SERVER = os.getenv("SMTP_SERVER")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
-    if not SENDGRID_API_KEY:
-        current_app.logger.error("❌ SENDGRID_API_KEY not set.")
+    if not all([SMTP_SERVER, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD]):
+        current_app.logger.error("❌ SMTP environment variables not set properly.")
         return False
 
-    data = {
-        "personalizations": [
-            {"to": [{"email": email}], "subject": "Your AspireMatch Login OTP"}
-        ],
-        "from": {"email": "aspirematch2@gmail.com"},
-        "content": [
-            {
-                "type": "text/plain",
-                "value": f"""Your One-Time Password (OTP) is:
+    msg = MIMEText(f"""Your One-Time Password (OTP) is:
 
 {otp}
 
 This code will expire in 5 minutes.
 
-If you did not request this, please ignore this email."""
-            }
-        ]
-    }
+If you did not request this, please ignore this email.
+""")
+
+    msg["Subject"] = "AspireMatch Admin OTP"
+    msg["From"] = SMTP_EMAIL
+    msg["To"] = email
 
     try:
-        response = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
-            headers={
-                "Authorization": f"Bearer {SENDGRID_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json=data,
-            timeout=15
-        )
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
 
-        if response.status_code == 202:
-            current_app.logger.info("✅ OTP email sent via SendGrid.")
-            return True
-        else:
-            current_app.logger.error(f"❌ SendGrid error: {response.text}")
-            return False
+        current_app.logger.info("✅ Admin OTP email sent via SMTP.")
+        return True
 
     except Exception as e:
-        current_app.logger.error(f"❌ SendGrid exception: {e}")
+        current_app.logger.error(f"❌ SMTP error: {e}")
         return False
 
 @admin_bp.route("/test-db")
@@ -5275,43 +5273,63 @@ def verify_email_change():
 
     data = session["email_change"]
 
-    # Expire OTP after 5 minutes
-    if time.time() - data["time"] > 300:
-        session.pop("email_change")
+    # ⏱ Expire OTP after 5 minutes
+    if time.time() - data.get("time", 0) > 300:
+        session.pop("email_change", None)
         flash("Verification code expired. Please try again.", "error")
         return redirect(url_for("admin.adminProfile"))
 
     if request.method == "POST":
         action = request.form.get("action")
+
+        # 🔙 Cancel action
         if action == "back":
-            session.pop("email_change")
+            session.pop("email_change", None)
             flash("Email change cancelled.", "info")
             return redirect(url_for("admin.adminProfile"))
 
-        entered_otp = request.form.get("otp")
-        data["attempts"] += 1
+        entered_otp = request.form.get("otp", "").strip()
+
+        if not entered_otp:
+            flash("Please enter the OTP.", "error")
+            return redirect(url_for("admin.verify_email_change"))
+
+        # 🔢 Track attempts safely
+        data["attempts"] = data.get("attempts", 0) + 1
         session["email_change"] = data
 
-        # Max attempts
+        # ❌ Max attempts
         if data["attempts"] >= 5:
-            session.pop("email_change")
+            session.pop("email_change", None)
             flash("Too many failed attempts. Email change cancelled.", "error")
             return redirect(url_for("admin.adminProfile"))
 
-        if entered_otp != data["otp"]:
-            flash(f"Invalid OTP. Attempts left: {5 - data['attempts']}", "error")
+        # ❌ Wrong OTP
+        if entered_otp != data.get("otp"):
+            remaining = 5 - data["attempts"]
+            flash(f"Invalid OTP. Attempts left: {remaining}", "error")
             return redirect(url_for("admin.verify_email_change"))
 
-        # OTP correct → update email
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(f"UPDATE {data['table']} SET email = %s WHERE username = %s",
-                    (data["new_email"], data["username"]))
-        conn.commit()
-        cur.close()
-        conn.close()
+        # ✅ OTP correct → update email
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
 
-        session.pop("email_change")
+            cur.execute(
+                f"UPDATE {data['table']} SET email = %s WHERE username = %s",
+                (data["new_email"], data["username"])
+            )
+
+            conn.commit()
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            current_app.logger.error(f"❌ Email update failed: {e}")
+            flash("Failed to update email. Please try again.", "error")
+            return redirect(url_for("admin.adminProfile"))
+
+        session.pop("email_change", None)
         flash("Email updated successfully.", "success")
         return redirect(url_for("admin.adminProfile"))
 
@@ -5324,13 +5342,23 @@ def resend_email_otp():
         return redirect(url_for("admin.adminProfile"))
 
     data = session["email_change"]
+
+    # ⏱ Prevent spam (60 sec cooldown)
+    last_sent = data.get("time", 0)
+    if time.time() - last_sent < 60:
+        remaining = int(60 - (time.time() - last_sent))
+        flash(f"Please wait {remaining} seconds before requesting a new OTP.", "error")
+        return redirect(url_for("admin.verify_email_change"))
+
     otp = generate_otp()
+
     data["otp"] = otp
     data["time"] = time.time()
     data["attempts"] = 0
     session["email_change"] = data
 
     sent = send_otp_email(data["new_email"], otp)
+
     if not sent:
         flash("Unable to resend OTP. Please try again later.", "error")
         return redirect(url_for("admin.adminProfile"))
